@@ -1,0 +1,105 @@
+# =========================================
+# Arquivos de Ambiente Virtual (MUITO IMPORTANTE)
+# Ignora a pasta do ambiente virtual do Python. Ela contém milhares de
+# arquivos e nunca deve ser enviada para o repositório.
+# =========================================
+/backend/venv/
+
+# =========================================
+# Arquivos compilados e cache do Python/Django
+# =========================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =========================================
+# Arquivos de Banco de Dados Locais
+# Embora estejamos usando PostgreSQL, é uma boa prática ignorar
+# arquivos de bancos de dados locais como o SQLite.
+# =========================================
+*.sqlite3
+db.sqlite3
+
+# =========================================
+# Arquivos de IDE e Configurações de Editor
+# Ignora arquivos gerados por editores como VS Code, PyCharm, etc.
+# =========================================
+.idea/
+.vscode/
+*.swp
+*~
+
+# =========================================
+# Arquivos de dependências e pacotes Python
+# =========================================
+pip-wheel-metadata/
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# =========================================
+# Arquivos Sensíveis
+# Ignora arquivos de variáveis de ambiente que contêm senhas e chaves de API.
+# =========================================
+.env
+*.env
+
+# =========================================
+# REGRAS DO FLUTTER (Frontend)
+# Copiadas do .gitignore padrão do Flutter.
+# =========================================
+# Arquivos de build e ferramentas do Dart/Flutter
+/frontend/.dart_tool/
+/frontend/.idea/
+/frontend/.metadata
+/frontend/.packages
+/frontend/build/
+/frontend/flutter_build.d
+
+# Arquivos de log e dependências
+/frontend/*.iml
+/frontend/*.lock
+/frontend/pubspec.lock
+
+# Arquivos de configuração específicos de IDE
+/frontend/.idea
+/frontend/ios/Pods/
+/frontend/ios/.symlinks/
+/frontend/ios/Flutter/App.framework
+/frontend/ios/Flutter/engine
+/frontend/ios/Flutter/flutter_assets/
+/frontend/ios/Flutter/Generated.xcconfig
+/frontend/ios/Flutter/flutter_export_environment.sh
+
+# Arquivos gerados pelo Android Studio/IntelliJ
+/frontend/captures/
+/frontend/.idea/libraries/
+/frontend/.idea/modules.xml
+/frontend/.idea/runConfigurations/
+/frontend/.idea/workspace.xml
+/frontend/android/app/src/main/assets/flutter_assets/
+/frontend/android/key.properties
+/frontend/android/.gradle/
+/frontend/android/local.properties
+/frontend/android/app/build/
+/frontend/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+/frontend/android/.idea/gradle.xml
+/frontend/android/.idea/misc.xml
+/frontend/android/.idea/modules.xml
+/frontend/android/.idea/vcs.xml
+/frontend/android/.idea/workspace.xml
