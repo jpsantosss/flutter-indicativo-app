@@ -11,6 +11,9 @@ class _CadastroAtivoScreenState extends State<CadastroAtivoScreen> {
   final _nomeController = TextEditingController();
   final _marcaController = TextEditingController();
   final _modeloController = TextEditingController();
+  final _enderecoController = TextEditingController();
+  final _longitudeController = TextEditingController();
+  final _latitudeController = TextEditingController();
   String? _periodicidadeSelecionada;
   String? _nomeArquivoManual;
 
@@ -170,9 +173,52 @@ class _CadastroAtivoScreenState extends State<CadastroAtivoScreen> {
                     ],
                   ),
                 ),
-
+              const SizedBox(height: 24),
+              const Text(
+                'Endereço',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _enderecoController,
+                decoration: InputDecoration(
+                  hintText: 'Ex: Rua Tiête',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Longitude',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _longitudeController,
+                decoration: InputDecoration(
+                  hintText: 'Ex: -22.431986',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Latitude',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _latitudeController,
+                decoration: InputDecoration(
+                  hintText: 'Ex: -42.978299',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
               const SizedBox(height: 40),
-
               //Botão de salvar
               SizedBox(
                 width: double.infinity,
