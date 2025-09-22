@@ -15,22 +15,22 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 //Criação das Ordens de Serviço conforme o modelo em models/ordem_servico.dart
   final List<OrdemServico> _ordensDoDia = [
     OrdemServico(
-      titulo: "Instalação de Câmeras de Segurança de Alta Resolução",
-      cliente: "Padaria Pão Quente",
+      titulo: "Manutenção Corretiva",
+      cliente: "Poste Solar",
       inicio: DateTime.now().copyWith(hour: 9, minute: 0),
       fim: DateTime.now().copyWith(hour: 11, minute: 30),
       cor: Colors.purple.shade300,
     ),
     OrdemServico(
       titulo: "Manutenção Preventiva",
-      cliente: "Condomínio Flores",
+      cliente: "Câmera de Segurança",
       inicio: DateTime.now().copyWith(hour: 14, minute: 0),
       fim: DateTime.now().copyWith(hour: 15, minute: 0),
       cor: Colors.orange.shade300,
     ),
     OrdemServico(
-      titulo: "Verificar Alarme",
-      cliente: "Loja de Roupas Stilo",
+      titulo: "Manutenção Preditiva",
+      cliente: "Sensor de movimento",
       inicio: DateTime.now().copyWith(hour: 15, minute: 30),
       fim: DateTime.now().copyWith(hour: 16, minute: 0),
       cor: Colors.teal.shade300,
