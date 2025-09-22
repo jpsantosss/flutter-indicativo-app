@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ordem_servico.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
+import 'package:flutter_tcc/presentation/screens/schedule/info_ordem_servico_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -12,28 +13,31 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime _selectedDate = DateTime.now();
 
-//Criação das Ordens de Serviço conforme o modelo em models/ordem_servico.dart
+  //Criação das Ordens de Serviço conforme o modelo em models/ordem_servico.dart
   final List<OrdemServico> _ordensDoDia = [
     OrdemServico(
-      titulo: "Manutenção Corretiva",
-      cliente: "Poste Solar",
+      titulo: "Verificar Câmera Sem Imagem",
+      ativo: "ATIVO 002 - CÂMERA DE SEGURANÇA",
       inicio: DateTime.now().copyWith(hour: 9, minute: 0),
-      fim: DateTime.now().copyWith(hour: 11, minute: 30),
+      fim: DateTime.now().copyWith(hour: 10, minute: 30),
       cor: Colors.purple.shade300,
+      usuarioSolicitante: "João Pedro",
+      dataCriacao: DateTime.now().subtract(const Duration(days: 2)),
+      tipoManutencao: "Corretiva",
+      status: StatusOS.pendente,
+      prioridade: PrioridadeOS.alta,
     ),
     OrdemServico(
       titulo: "Manutenção Preventiva",
-      cliente: "Câmera de Segurança",
+      ativo: "ATIVO 001 - POSTE SOLAR",
       inicio: DateTime.now().copyWith(hour: 14, minute: 0),
       fim: DateTime.now().copyWith(hour: 15, minute: 0),
       cor: Colors.orange.shade300,
-    ),
-    OrdemServico(
-      titulo: "Manutenção Preditiva",
-      cliente: "Sensor de movimento",
-      inicio: DateTime.now().copyWith(hour: 15, minute: 30),
-      fim: DateTime.now().copyWith(hour: 16, minute: 0),
-      cor: Colors.teal.shade300,
+      usuarioSolicitante: "Admin (Automático)",
+      dataCriacao: DateTime.now().subtract(const Duration(days: 5)),
+      tipoManutencao: "Preventiva",
+      status: StatusOS.pendente,
+      prioridade: PrioridadeOS.media,
     ),
   ];
 
@@ -71,7 +75,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-//Método para construção da TimeLine
+  //Método para construção da TimeLine
   Widget _buildTimelineBackground() {
     return Column(
       children: List.generate(24, (index) {
@@ -100,7 +104,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-// Widget que posiciona os cards de OS
+  // Widget que posiciona os cards de OS
   List<Widget> _buildEvents() {
     return _ordensDoDia.map((os) {
       final double top =
@@ -117,35 +121,47 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         left: 60.0,
         right: 8.0,
         height: height,
-        child: Card(
-          clipBehavior: Clip.hardEdge,
-          color: os.cor,
-          elevation: 3,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Flexible(
-                  child: Text(
-                    os.titulo,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => InfoOrdemServicoScreen(ordemServico: os),
+              ),
+            );
+          },
+          child: Card(
+            clipBehavior: Clip.hardEdge,
+            color: os.cor,
+            elevation: 3,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: Text(
+                      os.titulo,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    os.ativo,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  os.cliente,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -158,7 +174,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF12385D),
-        title: const Text('Agenda de Serviços', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Agenda de Serviços',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: Column(
         children: [
