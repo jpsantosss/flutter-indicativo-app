@@ -91,7 +91,6 @@ class _SearchScreenState extends State<SearchScreen> {
                     builder: (context) => InfoAtivoScreen(ativo: ativo),
                   ),
                 );
-                /* Ação para ver informações no futuro */
               },
               icon: const Icon(Icons.info_outline),
               tooltip: 'Informações do ativo',

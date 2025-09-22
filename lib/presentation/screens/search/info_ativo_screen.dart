@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ativo.dart';
+import 'package:flutter_tcc/presentation/screens/search/solicitar_manutencao_screen.dart';
 
 class InfoAtivoScreen extends StatelessWidget {
   final Ativo ativo;
@@ -142,7 +143,12 @@ class InfoAtivoScreen extends StatelessWidget {
                   icon: const Icon(Icons.build),
                   label: const Text('SOLICITAR MANUTENÇÃO'),
                   onPressed: () {
-                    /* Ação para solicitar manutenção no futuro */
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SolicitarManutencaoScreen(ativo: ativo),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange.shade800,
