@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ativo.dart';
+import 'package:flutter_tcc/presentation/screens/search/cadastro_ativo_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -9,14 +10,14 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-//Lista de dados estáticos para popular a tela
+  //Lista de dados estáticos para popular a tela
   final List<Ativo> _ativosFicticios = [
     Ativo(id: '001', nome: 'ATIVO 001 - POSTE SOLAR'),
     Ativo(id: '002', nome: 'ATIVO 002 - CÂMERA DE SEGURANÇA'),
     Ativo(id: '003', nome: 'ATIVO 003 - SENSOR DE MOVIMENTO'),
   ];
 
-//Widget para construir cada card da lista de ativos
+  //Widget para construir cada card da lista de ativos
   Widget _buildAtivoCard(Ativo ativo) {
     return Card(
       elevation: 2,
@@ -35,16 +36,16 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-//Botão de rota
+            //Botão de rota
             IconButton(
               onPressed: () {
                 /* Ação para ver a rota no futuro */
               },
               icon: const Icon(Icons.directions),
               tooltip: 'Rota para o ativo',
-              color: Theme.of(context).primaryColor,
+              color: Color(0xFF12385D),
             ),
-//Botão de informações
+            //Botão de informações
             IconButton(
               onPressed: () {
                 /* Ação para ver informações no futuro */
@@ -67,15 +68,10 @@ class _SearchScreenState extends State<SearchScreen> {
         title: const Text('Ativos', style: TextStyle(color: Colors.white)),
       ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          16.0,
-          16.0,
-          16.0,
-          0,
-        ),
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
         child: Column(
           children: [
-//Barra de busca
+            //Barra de busca
             TextField(
               decoration: InputDecoration(
                 hintText: 'Buscar por nome ou ID do ativo...',
@@ -113,17 +109,22 @@ class _SearchScreenState extends State<SearchScreen> {
           padding: const EdgeInsets.all(8.0),
           child: ElevatedButton(
             onPressed: () {
-              /* Ação para ir para a tela de cadastro no futuro */
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CadastroAtivoScreen(),
+                ),
+              );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey.shade300,
-              foregroundColor: Colors.black87,
+              backgroundColor: Color(0xFF12385D),
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Cadastro de ativo'),
+            child: const Text('CADASTRO DE ATIVO'),
           ),
         ),
       ],
