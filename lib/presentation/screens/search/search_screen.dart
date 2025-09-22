@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ativo.dart';
 import 'package:flutter_tcc/presentation/screens/search/cadastro_ativo_screen.dart';
+import 'package:flutter_tcc/presentation/screens/search/info_ativo_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -12,9 +13,45 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   //Lista de dados estáticos para popular a tela
   final List<Ativo> _ativosFicticios = [
-    Ativo(id: '001', nome: 'ATIVO 001 - POSTE SOLAR'),
-    Ativo(id: '002', nome: 'ATIVO 002 - CÂMERA DE SEGURANÇA'),
-    Ativo(id: '003', nome: 'ATIVO 003 - SENSOR DE MOVIMENTO'),
+    Ativo(
+      id: '001',
+      nome: 'ATIVO 001 - POSTE SOLAR',
+      marca: 'SunPower',
+      modelo: 'X22-360',
+      periodicidade: 'Anual',
+      nomeArquivoManual: 'manual_poste_solar.pdf',
+      endereco: 'Rua Tiête',
+      latitude: '-22.431986',
+      longitude: '-42.978299',
+      mtbf: '8760 horas', // 1 ano
+      mttr: '48 horas',
+    ),
+    Ativo(
+      id: '002',
+      nome: 'ATIVO 002 - CÂMERA DE SEGURANÇA',
+      marca: 'Intelbras',
+      modelo: 'VHD 3230 B G4',
+      periodicidade: 'Mensal',
+      nomeArquivoManual: null, // Sem manual
+      endereco: 'Rua Tiête',
+      latitude: '-22.431986',
+      longitude: '-42.978299',
+      mtbf: '1250 horas',
+      mttr: '6 horas',
+    ),
+    Ativo(
+      id: '003',
+      nome: 'ATIVO 003 - SENSOR DE MOVIMENTO',
+      marca: 'Bosch',
+      modelo: 'DS-930',
+      periodicidade: 'Semestral',
+      nomeArquivoManual: 'bosch_ds930.pdf',
+      endereco: 'Rua Tiête',
+      latitude: '-22.431986',
+      longitude: '-42.978299',
+      mtbf: '4380 horas', // 6 meses
+      mttr: '2 horas',
+    ),
   ];
 
   //Widget para construir cada card da lista de ativos
@@ -48,6 +85,12 @@ class _SearchScreenState extends State<SearchScreen> {
             //Botão de informações
             IconButton(
               onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => InfoAtivoScreen(ativo: ativo),
+                  ),
+                );
                 /* Ação para ver informações no futuro */
               },
               icon: const Icon(Icons.info_outline),
