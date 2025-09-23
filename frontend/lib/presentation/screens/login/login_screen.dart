@@ -1,8 +1,69 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_tcc/presentation/screens/home/home_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    const String apiUrl = 'http://localhost:8000/api/login/';
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'username': _usernameController.text,
+          'password': _passwordController.text,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+      } else {
+        setState(() {
+          _errorMessage = 'Usuário ou senha inválidos.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Não foi possível conectar ao servidor.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,30 +93,23 @@ class LoginScreen extends StatelessWidget {
                             'IndicAtivo',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 34,
+                              fontSize: 40,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 2.0,
-                              shadows: [
-                                Shadow(
-                                  blurRadius: 10.0,
-                                  color: Colors.black26,
-                                  offset: Offset(2.0, 2.0),
-                                ),
-                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 50),
-
-//Login
                     const Text(
-                      'LOGIN',
+                      'USUÁRIO',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                     const SizedBox(height: 8),
                     TextField(
+                      controller: _usernameController,
+                      keyboardType: TextInputType.text,
                       decoration: InputDecoration(
                         filled: true,
                         fillColor: Colors.white,
@@ -66,14 +120,13 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-
-//Senha
                     const Text(
                       'SENHA',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                     const SizedBox(height: 8),
                     TextField(
+                      controller: _passwordController,
                       obscureText: true,
                       decoration: InputDecoration(
                         filled: true,
@@ -84,20 +137,24 @@ class LoginScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
-
-// Botão de entrar
+                    const SizedBox(height: 20),
+                    if (_errorMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20.0),
+                        child: Center(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => HomeScreen(),
-                            ),
-                          );
-                        },
+                        onPressed: _isLoading ? null : _login,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: accentColor,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -105,26 +162,28 @@ class LoginScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          'ENTRAR',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
+                        child:
+                            _isLoading
+                                ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                                : const Text(
+                                  'ENTRAR',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                  ),
+                                ),
                       ),
                     ),
-                    const SizedBox(height: 20),
                   ],
                 ),
               ),
             ),
-            
-// Rodapé
-            Container(
-              color: accentColor,
-              height: 8,
-            ),
+            Container(color: accentColor, height: 5),
             Container(
               color: Colors.white,
-              height: 200,
+              height: 100,
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
