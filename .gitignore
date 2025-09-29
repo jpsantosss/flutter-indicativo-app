@@ -41,7 +41,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
 lib64/
 parts/
 sdist/
@@ -103,3 +103,13 @@ MANIFEST
 /frontend/android/.idea/modules.xml
 /frontend/android/.idea/vcs.xml
 /frontend/android/.idea/workspace.xml
+
+# Arquivos gerados pelo Flutter
+/frontend/.flutter-plugins
+/frontend/.flutter-plugins-dependencies
+
+# Pastas de build específicas de plataforma do Flutter.
+# Isso irá ignorar todos os arquivos gerados dentro delas.
+/frontend/linux/
+/frontend/windows/
+/frontend/macos/
