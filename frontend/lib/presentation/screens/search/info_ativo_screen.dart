@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ativo.dart';
-import 'package:flutter_tcc/presentation/screens/search/solicitar_manutencao_screen.dart';
+import 'package:flutter_tcc/presentation/screens/search/solicitar_os_screen.dart';
 
 class InfoAtivoScreen extends StatelessWidget {
   final Ativo ativo;
@@ -141,12 +141,12 @@ class InfoAtivoScreen extends StatelessWidget {
               Expanded(
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.build),
-                  label: const Text('SOLICITAR MANUTENÇÃO'),
+                  label: const Text('SOLICITAR O.S.'),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SolicitarManutencaoScreen(ativo: ativo),
+                        builder: (context) => SolicitarOSScreen(ativo: ativo),
                       ),
                     );
                   },
