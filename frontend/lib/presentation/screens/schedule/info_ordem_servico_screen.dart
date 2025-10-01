@@ -39,37 +39,6 @@ class InfoOrdemServicoScreen extends StatelessWidget {
     );
   }
 
-  //Converte o enum de Prioridade em um Widget visual (tag colorida)
-  Widget _buildPrioridadeTag(PrioridadeOS prioridade) {
-    String text;
-    Color color;
-    switch (prioridade) {
-      case PrioridadeOS.baixa:
-        text = 'Baixa';
-        color = Colors.blue;
-        break;
-      case PrioridadeOS.media:
-        text = 'Média';
-        color = Colors.amber.shade800;
-        break;
-      case PrioridadeOS.alta:
-        text = 'Alta';
-        color = Colors.red.shade700;
-        break;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
   Widget _buildInfoRow({
     required IconData icon,
     required String label,
@@ -157,11 +126,6 @@ class InfoOrdemServicoScreen extends StatelessWidget {
               icon: Icons.flag_outlined,
               label: 'Status',
               tag: _buildStatusTag(ordemServico.status),
-            ),
-            _buildInfoRowWithTag(
-              icon: Icons.priority_high,
-              label: 'Prioridade',
-              tag: _buildPrioridadeTag(ordemServico.prioridade),
             ),
             const Divider(height: 32),
 
