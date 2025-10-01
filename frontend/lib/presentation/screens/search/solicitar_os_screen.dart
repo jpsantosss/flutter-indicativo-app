@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ativo.dart';
+import 'package:intl/intl.dart';
 
 enum TipoOS { corretiva, preditiva }
 
@@ -8,17 +9,51 @@ class SolicitarOSScreen extends StatefulWidget {
   const SolicitarOSScreen({super.key, required this.ativo});
 
   @override
-  State<SolicitarOSScreen> createState() =>
-      _SolicitarOSScreenState();
+  State<SolicitarOSScreen> createState() => _SolicitarOSScreenState();
 }
 
 class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
   TipoOS? _tipoSelecionado = TipoOS.corretiva;
   final _observacaoController = TextEditingController();
+  DateTime? _dataPrevista;
+
+  Future<void> _selecionarData(BuildContext context) async {
+    const Color primaryColor = Color(0xFF12385D);
+
+    final DateTime? dataSelecionada = await showDatePicker(
+      context: context,
+      initialDate: _dataPrevista ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2030),
+      locale: const Locale('pt', 'BR'),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: primaryColor,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: primaryColor),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (dataSelecionada != null) {
+      setState(() {
+        _dataPrevista = dataSelecionada;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF12385D);
+    final dateFormatter = DateFormat('dd/MM/yyyy');
 
     return Scaffold(
       appBar: AppBar(
@@ -52,6 +87,7 @@ class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
                 subtitle: const Text('O ativo apresenta uma falha.'),
                 value: TipoOS.corretiva,
                 groupValue: _tipoSelecionado,
+                activeColor: primaryColor,
                 onChanged: (value) {
                   setState(() {
                     _tipoSelecionado = value;
@@ -70,6 +106,23 @@ class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
                     _tipoSelecionado = value;
                   });
                 },
+              ),
+              const SizedBox(height: 24),
+
+              const Text(
+                'Data Prevista para Execução',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => _selecionarData(context),
+                style: OutlinedButton.styleFrom(foregroundColor: primaryColor),
+                child: Text(
+                  _dataPrevista != null
+                      ? dateFormatter.format(_dataPrevista!)
+                      : 'Selecionar',
+                  style: const TextStyle(fontSize: 16),
+                ),
               ),
               const SizedBox(height: 24),
 
