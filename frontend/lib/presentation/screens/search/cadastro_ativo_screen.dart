@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CadastroAtivoScreen extends StatefulWidget {
   const CadastroAtivoScreen({super.key});
@@ -14,7 +15,7 @@ class _CadastroAtivoScreenState extends State<CadastroAtivoScreen> {
   final _enderecoController = TextEditingController();
   final _longitudeController = TextEditingController();
   final _latitudeController = TextEditingController();
-  String? _periodicidadeSelecionada;
+  final _periodicidadeController = TextEditingController();
   String? _nomeArquivoManual;
 
   @override
@@ -83,39 +84,23 @@ class _CadastroAtivoScreenState extends State<CadastroAtivoScreen> {
               ),
               const SizedBox(height: 24),
               const Text(
-                'Periodicidade da Manutenção',
+                'Periodicidade da Manutenção (em dias)',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: _periodicidadeSelecionada,
-                hint: const Text('Selecione a frequência'),
+              TextField(
+                controller: _periodicidadeController,
+                // Define o teclado para mostrar apenas números
+                keyboardType: TextInputType.number,
+                // Impede que o utilizador digite caracteres que não sejam dígitos
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
+                  hintText: 'Ex: 30',
+                  suffixText: 'dias',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                items:
-                    [
-                          'Nenhuma',
-                          'Diária',
-                          'Semanal',
-                          'Quinzenal',
-                          'Mensal',
-                          'Anual',
-                        ]
-                        .map(
-                          (label) => DropdownMenuItem(
-                            value: label,
-                            child: Text(label),
-                          ),
-                        )
-                        .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _periodicidadeSelecionada = value;
-                  });
-                },
               ),
               const SizedBox(height: 24),
               const Text(
