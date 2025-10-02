@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ativo.dart';
 import 'package:flutter_tcc/presentation/screens/search/cadastro_ativo_screen.dart';
 import 'package:flutter_tcc/presentation/screens/search/info_ativo_screen.dart';
+import 'package:flutter_tcc/presentation/screens/search/editar_ativo_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -18,7 +19,7 @@ class _SearchScreenState extends State<SearchScreen> {
       nome: 'ATIVO 001 - POSTE SOLAR',
       marca: 'SunPower',
       modelo: 'X22-360',
-      periodicidade: 'Anual',
+      periodicidade: '120',
       nomeArquivoManual: 'manual_poste_solar.pdf',
       endereco: 'Rua Tiête',
       latitude: '-22.431986',
@@ -31,7 +32,7 @@ class _SearchScreenState extends State<SearchScreen> {
       nome: 'ATIVO 002 - CÂMERA DE SEGURANÇA',
       marca: 'Intelbras',
       modelo: 'VHD 3230 B G4',
-      periodicidade: 'Mensal',
+      periodicidade: '90',
       nomeArquivoManual: null, // Sem manual
       endereco: 'Rua Tiête',
       latitude: '-22.431986',
@@ -44,7 +45,7 @@ class _SearchScreenState extends State<SearchScreen> {
       nome: 'ATIVO 003 - SENSOR DE MOVIMENTO',
       marca: 'Bosch',
       modelo: 'DS-930',
-      periodicidade: 'Semestral',
+      periodicidade: '30',
       nomeArquivoManual: 'bosch_ds930.pdf',
       endereco: 'Rua Tiête',
       latitude: '-22.431986',
@@ -72,6 +73,20 @@ class _SearchScreenState extends State<SearchScreen> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+            ),
+            //Botão de editar
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditarAtivoScreen(ativo: ativo),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.edit),
+              tooltip: 'Editar ativo',
+              color: Colors.orange,
             ),
             //Botão de rota
             IconButton(
