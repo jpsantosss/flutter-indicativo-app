@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ordem_servico.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
 import 'package:flutter_tcc/presentation/screens/schedule/info_ordem_servico_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -13,37 +12,31 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime _selectedDate = DateTime.now();
 
-  //Criação das Ordens de Serviço conforme o modelo em models/ordem_servico.dart
+  // Dados fictícios das Ordens de Serviço do dia
   final List<OrdemServico> _ordensDoDia = [
     OrdemServico(
-      titulo: "Verificar Câmera Sem Imagem",
-      ativo: "ATIVO 002 - CÂMERA DE SEGURANÇA",
+      titulo: "Manutenção Corretiva",
+      ativo: "ATIVO 002 - CÂMARA DE SEGURANÇA",
       inicio: DateTime.now().copyWith(hour: 9, minute: 0),
       fim: DateTime.now().copyWith(hour: 10, minute: 30),
-      cor: Colors.purple.shade300,
       usuarioSolicitante: "João Pedro",
       dataCriacao: DateTime.now().subtract(const Duration(days: 2)),
       tipoManutencao: "Corretiva",
       status: StatusOS.pendente,
-      prioridade: PrioridadeOS.alta,
     ),
     OrdemServico(
       titulo: "Manutenção Preventiva",
       ativo: "ATIVO 001 - POSTE SOLAR",
       inicio: DateTime.now().copyWith(hour: 14, minute: 0),
       fim: DateTime.now().copyWith(hour: 15, minute: 0),
-      cor: Colors.orange.shade300,
       usuarioSolicitante: "Admin (Automático)",
       dataCriacao: DateTime.now().subtract(const Duration(days: 5)),
       tipoManutencao: "Preventiva",
       status: StatusOS.pendente,
-      prioridade: PrioridadeOS.media,
     ),
   ];
 
-  final double _hourHeight = 80.0;
-  final double _minEventHeight = 60.0;
-
+  // Cabeçalho para navegar entre os dias
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -75,105 +68,44 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  //Método para construção da TimeLine
-  Widget _buildTimelineBackground() {
-    return Column(
-      children: List.generate(24, (index) {
-        return Container(
-          height: _hourHeight,
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: Colors.grey.shade300, width: 1.0),
-            ),
-          ),
-          child: Row(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 8.0),
-                child: Text(
-                  '${index.toString().padLeft(2, '0')}:00',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(child: Container()),
-            ],
-          ),
-        );
-      }),
-    );
-  }
+  // Widget que cria um card individual para cada Ordem de Serviço
+  Widget _buildOSCard(OrdemServico os) {
+    // Define um ícone e cor com base na prioridade da O.S.
 
-  // Widget que posiciona os cards de OS
-  List<Widget> _buildEvents() {
-    return _ordensDoDia.map((os) {
-      final double top =
-          os.inicio.hour * _hourHeight +
-          (os.inicio.minute / 60.0) * _hourHeight;
-      final double durationInMinutes =
-          os.fim.difference(os.inicio).inMinutes.toDouble();
-
-      final double calculatedHeight = durationInMinutes / 60.0 * _hourHeight;
-      final double height = math.max(calculatedHeight, _minEventHeight);
-
-      return Positioned(
-        top: top,
-        left: 60.0,
-        right: 8.0,
-        height: height,
-        child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => InfoOrdemServicoScreen(ordemServico: os),
-              ),
-            );
-          },
-          child: Card(
-            clipBehavior: Clip.hardEdge,
-            color: os.cor,
-            elevation: 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Flexible(
-                    child: Text(
-                      os.titulo,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    os.ativo,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ),
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16.0),
+        title: Text(
+          os.titulo,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-      );
-    }).toList();
+        subtitle: Text(
+          '${os.ativo}\n${DateFormat('HH:mm').format(os.inicio)} - ${DateFormat('HH:mm').format(os.fim)}',
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        isThreeLine: true,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => InfoOrdemServicoScreen(ordemServico: os),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    const Color primaryColor = Color(0xFF12385D);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12385D),
+        backgroundColor: primaryColor,
         title: const Text(
           'Agenda de Serviços',
           style: TextStyle(color: Colors.white),
@@ -182,15 +114,39 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       body: Column(
         children: [
           _buildHeader(),
+          // A lista de O.S. ocupa todo o espaço restante
           Expanded(
-            child: SingleChildScrollView(
-              child: Stack(
-                children: [_buildTimelineBackground(), ..._buildEvents()],
-              ),
+            child: ListView.builder(
+              itemCount: _ordensDoDia.length,
+              itemBuilder: (context, index) {
+                return _buildOSCard(_ordensDoDia[index]);
+              },
             ),
           ),
         ],
       ),
+      // Botão fixo no rodapé da tela
+      persistentFooterButtons: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.route_outlined),
+            label: const Text('TRAÇAR MELHOR ROTA'),
+            onPressed: () {
+              // Lógica futura para otimização de rota
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
