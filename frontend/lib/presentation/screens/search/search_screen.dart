@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ativo.dart';
 import 'package:flutter_tcc/presentation/screens/search/cadastro_ativo_screen.dart';
 import 'package:flutter_tcc/presentation/screens/search/info_ativo_screen.dart';
 import 'package:flutter_tcc/presentation/screens/search/editar_ativo_screen.dart';
+import 'package:http/http.dart' as http;
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -12,50 +14,97 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  //Lista de dados estáticos para popular a tela
-  final List<Ativo> _ativosFicticios = [
-    Ativo(
-      id: '001',
-      nome: 'ATIVO 001 - POSTE SOLAR',
-      marca: 'SunPower',
-      modelo: 'X22-360',
-      periodicidade: '120',
-      nomeArquivoManual: 'manual_poste_solar.pdf',
-      endereco: 'Rua Tiête',
-      latitude: '-22.431986',
-      longitude: '-42.978299',
-      mtbf: '8760 horas', // 1 ano
-      mttr: '48 horas',
-    ),
-    Ativo(
-      id: '002',
-      nome: 'ATIVO 002 - CÂMERA DE SEGURANÇA',
-      marca: 'Intelbras',
-      modelo: 'VHD 3230 B G4',
-      periodicidade: '90',
-      nomeArquivoManual: null, // Sem manual
-      endereco: 'Rua Tiête',
-      latitude: '-22.431986',
-      longitude: '-42.978299',
-      mtbf: '1250 horas',
-      mttr: '6 horas',
-    ),
-    Ativo(
-      id: '003',
-      nome: 'ATIVO 003 - SENSOR DE MOVIMENTO',
-      marca: 'Bosch',
-      modelo: 'DS-930',
-      periodicidade: '30',
-      nomeArquivoManual: 'bosch_ds930.pdf',
-      endereco: 'Rua Tiête',
-      latitude: '-22.431986',
-      longitude: '-42.978299',
-      mtbf: '4380 horas', // 6 meses
-      mttr: '2 horas',
-    ),
-  ];
+  // Variáveis de estado para gerir a UI
+  bool _isLoading = true;
+  List<Ativo> _ativos = [];
+  String? _errorMessage;
 
-  //Widget para construir cada card da lista de ativos
+  @override
+  void initState() {
+    super.initState();
+    // Busca os dados assim que o ecrã é carregado
+    _fetchAtivos();
+  }
+
+  // Função para buscar os ativos da API Django
+  Future<void> _fetchAtivos() async {
+    // Garante que o ecrã mostre o loading ao recarregar
+    if (!_isLoading) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
+    // Use 'localhost' para web/iOS e '10.0.2.2' para o emulador Android
+    const String apiUrl = 'http://localhost:8000/api/ativos/';
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+
+      if (response.statusCode == 200) {
+        // Usamos utf8.decode para garantir o tratamento correto de caracteres especiais (acentos, etc.)
+        final Map<String, dynamic> data = json.decode(
+          utf8.decode(response.bodyBytes),
+        );
+
+        // A API GeoDjango retorna uma lista de 'features'
+        final List<dynamic> features = data['features'];
+
+        // Usa o método Ativo.fromJson para converter cada item da lista
+        final List<Ativo> ativosCarregados =
+            features.map((feature) => Ativo.fromJson(feature)).toList();
+
+        setState(() {
+          _ativos = ativosCarregados;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Falha ao carregar os dados do servidor.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Não foi possível conectar ao servidor.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Constrói a UI com base no estado (loading, erro ou sucesso)
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorMessage != null) {
+      return Center(
+        child: Text(
+          _errorMessage!,
+          style: const TextStyle(color: Colors.red, fontSize: 16),
+        ),
+      );
+    }
+    if (_ativos.isEmpty) {
+      return const Center(child: Text('Nenhum ativo encontrado.'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: _fetchAtivos, // Permite "puxar para recarregar"
+      child: ListView.builder(
+        itemCount: _ativos.length,
+        itemBuilder: (context, index) {
+          return _buildAtivoCard(_ativos[index]);
+        },
+      ),
+    );
+  }
+
+  // Card individual para cada ativo
   Widget _buildAtivoCard(Ativo ativo) {
     return Card(
       elevation: 2,
@@ -97,7 +146,6 @@ class _SearchScreenState extends State<SearchScreen> {
               tooltip: 'Rota para o ativo',
               color: Color(0xFF12385D),
             ),
-            //Botão de informações
             IconButton(
               onPressed: () {
                 Navigator.push(
@@ -123,55 +171,53 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF12385D),
         title: const Text('Ativos', style: TextStyle(color: Colors.white)),
+        actions: [
+          // Botão para recarregar a lista manualmente
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            color: Colors.white,
+            onPressed: _fetchAtivos,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
         child: Column(
           children: [
-            //Barra de busca
             TextField(
               decoration: InputDecoration(
                 hintText: 'Buscar por nome ou ID do ativo...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    /* Ação para limpar a busca no futuro */
-                  },
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade200,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
+                filled: true,
+                fillColor: Colors.grey.shade200,
               ),
             ),
             const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _ativosFicticios.length,
-                itemBuilder: (context, index) {
-                  return _buildAtivoCard(_ativosFicticios[index]);
-                },
-              ),
-            ),
+            Expanded(child: _buildBody()), // O corpo do ecrã agora é dinâmico
           ],
         ),
       ),
-      // -- BOTÃO NO RODAPÉ --
       persistentFooterButtons: [
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(8.0),
           child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              // Navega para o ecrã de cadastro e espera um resultado
+              final bool? resultado = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const CadastroAtivoScreen(),
                 ),
               );
+              // Se o resultado for 'true' (cadastro bem-sucedido), recarrega a lista
+              if (resultado == true) {
+                _fetchAtivos();
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF12385D),

@@ -31,6 +31,8 @@ class Ativo(models.Model):
     endereco = models.CharField(max_length=255)
     # GeoDjango: Um único campo para guardar o ponto geográfico (longitude, latitude).
     localizacao = gis_models.PointField()
+    mtbf = models.CharField(max_length=100, blank=True, default="N/A")
+    mttr = models.CharField(max_length=100, blank=True, default="N/A")
 
     def __str__(self):
         return self.nome

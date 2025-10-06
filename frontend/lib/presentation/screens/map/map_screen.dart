@@ -1,15 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_tcc/data/models/ativo.dart';
 import 'package:flutter_tcc/presentation/screens/search/info_ativo_screen.dart';
 import 'package:flutter_tcc/presentation/screens/search/solicitar_os_screen.dart';
-
-class MapAtivo {
-  final Ativo ativo;
-  final LatLng position;
-
-  MapAtivo({required this.ativo, required this.position});
-}
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -22,118 +17,89 @@ class _MapScreenState extends State<MapScreen> {
   late GoogleMapController _mapController;
   final Set<Marker> _markers = {};
 
-  final List<MapAtivo> _ativosNoMapa = [
-    MapAtivo(
-      ativo: Ativo(
-        id: '001',
-        nome: 'ATIVO 001 - POSTE SOLAR',
-        marca: 'SunPower',
-        modelo: 'X22-360',
-        periodicidade: 'Anual',
-        mtbf: '8760 horas',
-        mttr: '48 horas',
-        endereco: 'Rua das Flores, 123',
-        latitude: '-22.4088',
-        longitude: '-42.9645',
-        nomeArquivoManual: 'manual_poste_solar.pdf',
-      ),
-      position: const LatLng(-22.4165, -42.9712),
-    ),
-    MapAtivo(
-      ativo: Ativo(
-        id: '002',
-        nome: 'ATIVO 002 - CÂMARA DE SEGURANÇA',
-        marca: 'Intelbras',
-        modelo: 'VHD 3230',
-        periodicidade: 'Mensal',
-        mtbf: '1250 horas',
-        mttr: '6 horas',
-        endereco: 'Av. Principal, 456',
-        latitude: '-22.4088',
-        longitude: '-42.9645',
-        nomeArquivoManual: null,
-      ),
-      position: const LatLng(-22.4088, -42.9645),
-    ),
-    MapAtivo(
-      ativo: Ativo(
-        id: '003',
-        nome: 'ATIVO 003 - SENSOR DE MOVIMENTO',
-        marca: 'Bosch',
-        modelo: 'DS-930',
-        periodicidade: 'Semestral',
-        mtbf: '4380 horas',
-        mttr: '2 horas',
-        endereco: 'Praça da Matriz, 789',
-        latitude: '-22.4088',
-        longitude: '-42.9645',
-        nomeArquivoManual: 'bosch_ds930.pdf',
-      ),
-      position: const LatLng(-22.4190, -42.9599),
-    ),
-  ];
+  // Variáveis de estado para gerir a busca de dados
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _setMarkers();
+    _fetchAtivos();
   }
 
-  void _setMarkers() {
-    for (var mapAtivo in _ativosNoMapa) {
-      _markers.add(
-        Marker(
-          markerId: MarkerId(mapAtivo.ativo.id),
-          position: mapAtivo.position,
-          onTap: () {
-            _showInfoBottomSheet(mapAtivo);
-          },
-        ),
-      );
+  // Função para buscar os ativos da API e criar os marcadores
+  Future<void> _fetchAtivos() async {
+    const String apiUrl = 'http://localhost:8000/api/ativos/';
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data =
+            json.decode(utf8.decode(response.bodyBytes));
+        final List<dynamic> features = data['features'];
+        final List<Ativo> ativos =
+            features.map((feature) => Ativo.fromJson(feature)).toList();
+
+        // Limpa os marcadores antigos e cria novos
+        Set<Marker> tempMarkers = {};
+        for (var ativo in ativos) {
+          tempMarkers.add(
+            Marker(
+              markerId: MarkerId(ativo.id),
+              position: LatLng(ativo.latitude, ativo.longitude),
+              onTap: () {
+                _showInfoBottomSheet(ativo);
+              },
+            ),
+          );
+        }
+
+        setState(() {
+          _markers.clear();
+          _markers.addAll(tempMarkers);
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Falha ao carregar os ativos.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Não foi possível conectar ao servidor.';
+        _isLoading = false;
+      });
     }
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: SizedBox(
-        width: 100,
-        child: Column(
-          children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2E95AC),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: Colors.white, size: 36),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
+  // Widget de ação para o BottomSheet
+  Widget _buildActionButton(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onPressed}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            shape: const CircleBorder(),
+            padding: const EdgeInsets.all(16),
+            backgroundColor: const Color(0xFF2E95AC),
+            foregroundColor: Colors.white,
+          ),
+          child: Icon(icon, size: 30),
         ),
-      ),
+        const SizedBox(height: 8),
+        Text(label, style: const TextStyle(color: Colors.black54)),
+      ],
     );
   }
 
-  void _showInfoBottomSheet(MapAtivo mapAtivo) {
+  // Função que cria e exibe o BottomSheet de informações
+  void _showInfoBottomSheet(Ativo ativo) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -147,7 +113,8 @@ class _MapScreenState extends State<MapScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                mapAtivo.ativo.nome,
+                ativo.nome,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -159,37 +126,34 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   _buildActionButton(
                     icon: Icons.build,
-                    label: 'Solicitar\nOrdem de Serviço',
-                    onTap: () {
+                    label: 'Solicitar O.S.',
+                    onPressed: () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder:
-                              (context) =>
-                                  SolicitarOSScreen(ativo: mapAtivo.ativo),
+                          builder: (context) =>
+                              SolicitarOSScreen(ativo: ativo),
                         ),
                       );
                     },
                   ),
                   _buildActionButton(
-                    icon: Icons.directions_outlined,
+                    icon: Icons.directions,
                     label: 'Rotas',
-                    onTap: () {
+                    onPressed: () {
                       /* Lógica futura para abrir a rota */
                     },
                   ),
                   _buildActionButton(
                     icon: Icons.info_outline,
                     label: 'Informações',
-                    onTap: () {
+                    onPressed: () {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder:
-                              (context) =>
-                                  InfoAtivoScreen(ativo: mapAtivo.ativo),
+                          builder: (context) => InfoAtivoScreen(ativo: ativo),
                         ),
                       );
                     },
@@ -209,15 +173,51 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF12385D),
         title: const Text('Mapa', style: TextStyle(color: Colors.white)),
+        actions: [
+          // Botão para recarregar o mapa manualmente
+          if (!_isLoading)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              color: Colors.white,
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                  _errorMessage = null;
+                });
+                _fetchAtivos();
+              },
+            ),
+        ],
       ),
-      body: GoogleMap(
-        onMapCreated: (controller) => _mapController = controller,
-        initialCameraPosition: const CameraPosition(
-          target: LatLng(-22.4123, -42.9664),
-          zoom: 13.5,
-        ),
-        markers: _markers,
+      body: Stack(
+        children: [
+          GoogleMap(
+            onMapCreated: (controller) => _mapController = controller,
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(-22.4123, -42.9664),
+              zoom: 13.5,
+            ),
+            markers: _markers,
+          ),
+          // Exibe o indicador de carregamento ou a mensagem de erro sobre o mapa
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
+          if (_errorMessage != null)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                color: Colors.white.withOpacity(0.8),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 }
+
