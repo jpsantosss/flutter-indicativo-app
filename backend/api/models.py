@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.contrib.gis.db import models as gis_models
 
 class CustomUser(AbstractUser):
     CARGO_CHOICES = [
@@ -18,3 +19,18 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+# Modelo para os Ativos
+class Ativo(models.Model):
+    nome = models.CharField(max_length=255)
+    marca = models.CharField(max_length=255)
+    modelo = models.CharField(max_length=255)
+    periodicidade = models.IntegerField()
+    manual = models.FileField(upload_to='manuais/', blank=True, null=True)
+    endereco = models.CharField(max_length=255)
+    # GeoDjango: Um único campo para guardar o ponto geográfico (longitude, latitude).
+    localizacao = gis_models.PointField()
+
+    def __str__(self):
+        return self.nome

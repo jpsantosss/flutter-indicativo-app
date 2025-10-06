@@ -3,6 +3,9 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate, get_user_model
+from rest_framework import viewsets
+from .models import Ativo
+from .serializers import AtivoSerializer
 
 User = get_user_model()
 class LoginView(APIView):
@@ -29,3 +32,16 @@ class LoginView(APIView):
             # Se a autenticação falhar, lança uma exceção que o DjangoRestFramework transforma
             # em uma resposta de erro (HTTP 401 Unauthorized)
             raise AuthenticationFailed('Usuário ou senha inválidos.')
+        
+
+
+#
+#
+#
+
+class AtivoViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint que permite que ativos sejam vistos ou editados.
+    """
+    queryset = Ativo.objects.all()
+    serializer_class = AtivoSerializer
