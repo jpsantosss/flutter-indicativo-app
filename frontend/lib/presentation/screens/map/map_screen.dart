@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_tcc/data/models/ativo.dart';
 import 'package:flutter_tcc/presentation/screens/search/info_ativo_screen.dart';
 import 'package:flutter_tcc/presentation/screens/search/solicitar_os_screen.dart';
+import 'package:geolocator/geolocator.dart'; // 1. Importação adicionada
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -17,7 +18,6 @@ class _MapScreenState extends State<MapScreen> {
   late GoogleMapController _mapController;
   final Set<Marker> _markers = {};
 
-  // Variáveis de estado para gerir a busca de dados
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -25,23 +25,74 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _fetchAtivos();
+    _getCurrentLocation(); // 2. Chamada para obter a localização atual
   }
 
-  // Função para buscar os ativos da API e criar os marcadores
+  // Função para obter a localização atual do usuário e mover a câmera
+  Future<void> _getCurrentLocation() async {
+    try {
+      // Verifica se o serviço de localização está ativo
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Você pode mostrar um diálogo ou snackbar aqui
+        return Future.error('Serviços de localização estão desativados.');
+      }
+
+      // Verifica as permissões
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return Future.error('Permissão de localização negada.');
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        return Future.error(
+          'A permissão de localização foi negada permanentemente.',
+        );
+      }
+
+      // Obtém a posição atual
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Move a câmera do mapa para a localização do usuário
+      _mapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(position.latitude, position.longitude),
+            zoom: 15.0, // Zoom mais próximo para a localização atual
+          ),
+        ),
+      );
+    } catch (e) {
+      // Trata possíveis erros
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Não foi possível obter a localização: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _fetchAtivos() async {
+    // const String apiUrl = 'http://26.183.189.133:8000/api/ativos/';
     const String apiUrl = 'http://localhost:8000/api/ativos/';
+
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data =
-            json.decode(utf8.decode(response.bodyBytes));
+        final Map<String, dynamic> data = json.decode(
+          utf8.decode(response.bodyBytes),
+        );
         final List<dynamic> features = data['features'];
         final List<Ativo> ativos =
             features.map((feature) => Ativo.fromJson(feature)).toList();
 
-        // Limpa os marcadores antigos e cria novos
         Set<Marker> tempMarkers = {};
         for (var ativo in ativos) {
           tempMarkers.add(
@@ -74,11 +125,11 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  // Widget de ação para o BottomSheet
-  Widget _buildActionButton(
-      {required IconData icon,
-      required String label,
-      required VoidCallback onPressed}) {
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -98,7 +149,6 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  // Função que cria e exibe o BottomSheet de informações
   void _showInfoBottomSheet(Ativo ativo) {
     showModalBottomSheet(
       context: context,
@@ -132,8 +182,7 @@ class _MapScreenState extends State<MapScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              SolicitarOSScreen(ativo: ativo),
+                          builder: (context) => SolicitarOSScreen(ativo: ativo),
                         ),
                       );
                     },
@@ -174,7 +223,6 @@ class _MapScreenState extends State<MapScreen> {
         backgroundColor: const Color(0xFF12385D),
         title: const Text('Mapa', style: TextStyle(color: Colors.white)),
         actions: [
-          // Botão para recarregar o mapa manualmente
           if (!_isLoading)
             IconButton(
               icon: const Icon(Icons.refresh),
@@ -194,16 +242,15 @@ class _MapScreenState extends State<MapScreen> {
           GoogleMap(
             onMapCreated: (controller) => _mapController = controller,
             initialCameraPosition: const CameraPosition(
-              target: LatLng(-22.4123, -42.9664),
+              target: LatLng(-22.4123, -42.9664), // Posição inicial padrão
               zoom: 13.5,
             ),
             markers: _markers,
+            myLocationEnabled: true, // 3. Habilita o ponto azul da localização
+            myLocationButtonEnabled:
+                false, // 4. Desabilita o botão padrão (usaremos o nosso)
           ),
-          // Exibe o indicador de carregamento ou a mensagem de erro sobre o mapa
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
           if (_errorMessage != null)
             Center(
               child: Container(
@@ -217,7 +264,12 @@ class _MapScreenState extends State<MapScreen> {
             ),
         ],
       ),
+      // 5. Botão para centralizar na localização do usuário
+      floatingActionButton: FloatingActionButton(
+        onPressed: _getCurrentLocation,
+        backgroundColor: const Color(0xFF12385D),
+        child: const Icon(Icons.my_location, color: Colors.white),
+      ),
     );
   }
 }
-
