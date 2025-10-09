@@ -36,24 +36,19 @@ class LoginView(APIView):
         
 
 
-#
-#
-#
-
-class AtivoViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint que permite que ativos sejam vistos ou editados.
-    """
-    queryset = Ativo.objects.all()
-    serializer_class = AtivoSerializer
+# -------------------
+# ATIVOS
+# -------------------
 
 
 class AtivoViewSet(viewsets.ModelViewSet):
     """
     API endpoint que permite que ativos sejam vistos ou editados.
     """
+    ## Visualização
     queryset = Ativo.objects.all()
     serializer_class = AtivoSerializer
 
+    ## Busca
     filter_backends = [SearchFilter]
     search_fields = ['nome'] # Define que a pesquisa deve ser feita no campo 'nome'
