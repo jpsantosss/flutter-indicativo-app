@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate, get_user_model
-from rest_framework import viewsets
-from .models import Ativo
-from .serializers import AtivoSerializer
+from rest_framework import viewsets, permissions
+from .models import Ativo, OrdemServico
+from .serializers import AtivoSerializer, OrdemServicoSerializer
 from rest_framework.filters import SearchFilter
 
 User = get_user_model()
@@ -52,3 +52,19 @@ class AtivoViewSet(viewsets.ModelViewSet):
     ## Busca
     filter_backends = [SearchFilter]
     search_fields = ['nome'] # Define que a pesquisa deve ser feita no campo 'nome'
+
+
+
+
+class OrdemServicoViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint que permite que Ordens de Serviço sejam vistas ou criadas.
+    """
+    queryset = OrdemServico.objects.all().order_by('-data_criacao')
+    serializer_class = OrdemServicoSerializer
+    # Permite acesso público para o modo de desenvolvimento
+    permission_classes = [permissions.AllowAny]
+
+    def perform_create(self, serializer):
+        # Como o acesso é público, o solicitante será nulo por enquanto.
+        serializer.save(solicitante=None)

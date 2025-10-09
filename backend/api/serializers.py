@@ -2,7 +2,7 @@ import json
 from django.contrib.gis.geos import Point
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from rest_framework import serializers
-from .models import Ativo
+from .models import Ativo, OrdemServico
 
 class AtivoSerializer(GeoFeatureModelSerializer):
     """
@@ -53,3 +53,13 @@ class AtivoSerializer(GeoFeatureModelSerializer):
         instance.save()
         return instance
 
+class OrdemServicoSerializer(serializers.ModelSerializer):
+    """
+    Serializer para o modelo OrdemServico.
+    """
+    class Meta:
+        model = OrdemServico
+        # Lista todos os campos que queremos que a API utilize
+        fields = ('id', 'titulo', 'tipo', 'descricao', 'status', 'ativo', 'data_criacao', 'data_prevista', 'solicitante')
+        # Define campos que são apenas de leitura (o backend preenche-os automaticamente)
+        read_only_fields = ('status', 'data_criacao', 'solicitante')
