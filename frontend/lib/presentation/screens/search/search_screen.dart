@@ -1,3 +1,4 @@
+import 'dart:async'; // Para usar o Timer do debounce
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ativo.dart';
@@ -14,7 +15,10 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  // Variáveis de estado para gerir a UI
+  // Controlador para o campo de pesquisa
+  final _searchController = TextEditingController();
+  Timer? _debounce;
+
   bool _isLoading = true;
   List<Ativo> _ativos = [];
   String? _errorMessage;
@@ -22,13 +26,33 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    // Busca os dados assim que o ecrã é carregado
-    _fetchAtivos();
+    _fetchAtivos(); // Busca inicial
+    // Adiciona um "ouvinte" que é acionado sempre que o texto muda
+    _searchController.addListener(_onSearchChanged);
   }
 
-  // Função para buscar os ativos da API Django
-  Future<void> _fetchAtivos() async {
-    // Garante que o ecrã mostre o loading ao recarregar
+  @override
+  void dispose() {
+    // Limpa os recursos para evitar fugas de memória
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  // Função chamada a cada alteração no campo de pesquisa
+  void _onSearchChanged() {
+    // Se já houver um timer a contar, cancela-o
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    // Cria um novo timer de 500ms. Se o utilizador não digitar mais nada
+    // durante este tempo, a função _fetchAtivos será chamada.
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _fetchAtivos(query: _searchController.text);
+    });
+  }
+
+  // Função ATUALIZADA para aceitar um termo de pesquisa
+  Future<void> _fetchAtivos({String? query}) async {
     if (!_isLoading) {
       setState(() {
         _isLoading = true;
@@ -36,22 +60,24 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     }
 
+    // Monta a URL base
     // Use 'localhost' para web/iOS e '10.0.2.2' para o emulador Android
-    const String apiUrl = 'http://localhost:8000/api/ativos/';
+    String apiUrl = 'http://localhost:8000/api/ativos/';
+
+    // Se houver um termo de pesquisa, adiciona-o como parâmetro na URL
+    if (query != null && query.isNotEmpty) {
+      // Uri.encodeComponent garante que caracteres especiais na busca sejam tratados corretamente
+      apiUrl += '?search=${Uri.encodeComponent(query)}';
+    }
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
 
       if (response.statusCode == 200) {
-        // Usamos utf8.decode para garantir o tratamento correto de caracteres especiais (acentos, etc.)
         final Map<String, dynamic> data = json.decode(
           utf8.decode(response.bodyBytes),
         );
-
-        // A API GeoDjango retorna uma lista de 'features'
         final List<dynamic> features = data['features'];
-
-        // Usa o método Ativo.fromJson para converter cada item da lista
         final List<Ativo> ativosCarregados =
             features.map((feature) => Ativo.fromJson(feature)).toList();
 
@@ -89,12 +115,18 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       );
     }
+    // Mostra uma mensagem diferente se a busca não retornou resultados
+    if (_ativos.isEmpty && _searchController.text.isNotEmpty) {
+      return const Center(
+        child: Text('Nenhum ativo encontrado para a sua busca.'),
+      );
+    }
     if (_ativos.isEmpty) {
-      return const Center(child: Text('Nenhum ativo encontrado.'));
+      return const Center(child: Text('Nenhum ativo cadastrado.'));
     }
 
     return RefreshIndicator(
-      onRefresh: _fetchAtivos, // Permite "puxar para recarregar"
+      onRefresh: () => _fetchAtivos(),
       child: ListView.builder(
         itemCount: _ativos.length,
         itemBuilder: (context, index) {
@@ -123,7 +155,6 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-            //Botão de editar
             IconButton(
               onPressed: () {
                 Navigator.push(
@@ -137,14 +168,13 @@ class _SearchScreenState extends State<SearchScreen> {
               tooltip: 'Editar ativo',
               color: Colors.orange,
             ),
-            //Botão de rota
             IconButton(
               onPressed: () {
                 /* Ação para ver a rota no futuro */
               },
               icon: const Icon(Icons.directions),
               tooltip: 'Rota para o ativo',
-              color: Color(0xFF12385D),
+              color: const Color(0xFF12385D),
             ),
             IconButton(
               onPressed: () {
@@ -172,11 +202,10 @@ class _SearchScreenState extends State<SearchScreen> {
         backgroundColor: const Color(0xFF12385D),
         title: const Text('Ativos', style: TextStyle(color: Colors.white)),
         actions: [
-          // Botão para recarregar a lista manualmente
           IconButton(
             icon: const Icon(Icons.refresh),
             color: Colors.white,
-            onPressed: _fetchAtivos,
+            onPressed: () => _fetchAtivos(),
           ),
         ],
       ),
@@ -184,10 +213,19 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
         child: Column(
           children: [
+            // O TextField agora está ligado ao nosso controlador
             TextField(
+              controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Buscar por nome ou ID do ativo...',
+                hintText: 'Buscar por nome do ativo...',
                 prefixIcon: const Icon(Icons.search),
+                // Adiciona um botão para limpar a pesquisa
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                  },
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -197,7 +235,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Expanded(child: _buildBody()), // O corpo do ecrã agora é dinâmico
+            Expanded(child: _buildBody()),
           ],
         ),
       ),
@@ -207,20 +245,20 @@ class _SearchScreenState extends State<SearchScreen> {
           padding: const EdgeInsets.all(8.0),
           child: ElevatedButton(
             onPressed: () async {
-              // Navega para o ecrã de cadastro e espera um resultado
               final bool? resultado = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const CadastroAtivoScreen(),
                 ),
               );
-              // Se o resultado for 'true' (cadastro bem-sucedido), recarrega a lista
               if (resultado == true) {
+                // Ao voltar do cadastro, limpa a busca para mostrar todos os ativos, incluindo o novo
+                _searchController.clear();
                 _fetchAtivos();
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF12385D),
+              backgroundColor: const Color(0xFF12385D),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(

@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate, get_user_model
 from rest_framework import viewsets
 from .models import Ativo
 from .serializers import AtivoSerializer
+from rest_framework.filters import SearchFilter
 
 User = get_user_model()
 class LoginView(APIView):
@@ -45,3 +46,14 @@ class AtivoViewSet(viewsets.ModelViewSet):
     """
     queryset = Ativo.objects.all()
     serializer_class = AtivoSerializer
+
+
+class AtivoViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint que permite que ativos sejam vistos ou editados.
+    """
+    queryset = Ativo.objects.all()
+    serializer_class = AtivoSerializer
+
+    filter_backends = [SearchFilter]
+    search_fields = ['nome'] # Define que a pesquisa deve ser feita no campo 'nome'
