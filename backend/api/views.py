@@ -7,6 +7,7 @@ from rest_framework import viewsets, permissions
 from .models import Ativo, OrdemServico
 from .serializers import AtivoSerializer, OrdemServicoSerializer
 from rest_framework.filters import SearchFilter
+from django_filters import rest_framework as filters
 
 User = get_user_model()
 class LoginView(APIView):
@@ -68,3 +69,13 @@ class OrdemServicoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Como o acesso é público, o solicitante será nulo por enquanto.
         serializer.save(solicitante=None)
+
+class OrdemServicoFilter(filters.FilterSet):
+    # Este filtro permite-nos pesquisar por O.S. numa data específica,
+    # ignorando a parte da hora do campo `data_prevista`.
+    # O frontend irá enviar um pedido como: /api/ordens-servico/?data_prevista=2025-10-09
+    data_prevista = filters.DateFilter(field_name='data_prevista__date')
+
+    class Meta:
+        model = OrdemServico
+        fields = ['data_prevista', 'status', 'tipo']

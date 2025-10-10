@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ordem_servico.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:flutter_tcc/presentation/screens/schedule/info_ordem_servico_screen.dart';
 
@@ -12,29 +14,64 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime _selectedDate = DateTime.now();
 
-  // Dados fictícios das Ordens de Serviço do dia
-  final List<OrdemServico> _ordensDoDia = [
-    OrdemServico(
-      titulo: "Manutenção Corretiva",
-      ativo: "ATIVO 002 - CÂMARA DE SEGURANÇA",
-      inicio: DateTime.now().copyWith(hour: 9, minute: 0),
-      fim: DateTime.now().copyWith(hour: 10, minute: 30),
-      usuarioSolicitante: "João Pedro",
-      dataCriacao: DateTime.now().subtract(const Duration(days: 2)),
-      tipoManutencao: "Corretiva",
-      status: StatusOS.pendente,
-    ),
-    OrdemServico(
-      titulo: "Manutenção Preventiva",
-      ativo: "ATIVO 001 - POSTE SOLAR",
-      inicio: DateTime.now().copyWith(hour: 14, minute: 0),
-      fim: DateTime.now().copyWith(hour: 15, minute: 0),
-      usuarioSolicitante: "Admin (Automático)",
-      dataCriacao: DateTime.now().subtract(const Duration(days: 5)),
-      tipoManutencao: "Preventiva",
-      status: StatusOS.pendente,
-    ),
-  ];
+  // Variáveis de estado
+  bool _isLoading = true;
+  List<OrdemServico> _ordensDoDia = [];
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchOrdensServico();
+  }
+
+  // Função para buscar as O.S. da API para a data selecionada
+  Future<void> _fetchOrdensServico() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // Formata a data para o formato YYYY-MM-DD que o backend espera
+    final String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    // Usa 'localhost' para web e '10.0.2.2' para o emulador Android
+    final String apiUrl =
+        'http://localhost:8000/api/ordens-servico/?data_prevista=$formattedDate';
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+        final List<OrdemServico> ordens =
+            data.map((json) => OrdemServico.fromJson(json)).toList();
+        setState(() {
+          _ordensDoDia = ordens;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Falha ao carregar as Ordens de Serviço.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Não foi possível conectar ao servidor.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Função para mudar a data e buscar os novos dados
+  void _changeDate(int days) {
+    setState(() {
+      _selectedDate = _selectedDate.add(Duration(days: days));
+    });
+    _fetchOrdensServico();
+  }
 
   // Cabeçalho para navegar entre os dias
   Widget _buildHeader() {
@@ -44,88 +81,77 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left, size: 30),
-            onPressed: () {
-              setState(() {
-                _selectedDate = _selectedDate.subtract(const Duration(days: 1));
-              });
-            },
-          ),
-          Text(
-            DateFormat.yMMMMEEEEd('pt_BR').format(_selectedDate),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+              icon: const Icon(Icons.chevron_left, size: 30),
+              onPressed: () => _changeDate(-1)),
+          Text(DateFormat.yMMMMEEEEd('pt_BR').format(_selectedDate),
+              style:
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           IconButton(
-            icon: const Icon(Icons.chevron_right, size: 30),
-            onPressed: () {
-              setState(() {
-                _selectedDate = _selectedDate.add(const Duration(days: 1));
-              });
-            },
-          ),
+              icon: const Icon(Icons.chevron_right, size: 30),
+              onPressed: () => _changeDate(1)),
         ],
       ),
     );
   }
 
-  // Widget que cria um card individual para cada Ordem de Serviço
+  // Widget que cria um card para cada O.S.
   Widget _buildOSCard(OrdemServico os) {
-    // Define um ícone e cor com base na prioridade da O.S.
-
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        contentPadding: const EdgeInsets.all(16.0),
-        title: Text(
-          os.titulo,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          '${os.ativo}\n${DateFormat('HH:mm').format(os.inicio)} - ${DateFormat('HH:mm').format(os.fim)}',
-        ),
+        title:
+            Text(os.titulo, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('Ativo: ${os.ativo}'),
         trailing: const Icon(Icons.chevron_right),
-        isThreeLine: true,
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => InfoOrdemServicoScreen(ordemServico: os),
-            ),
-          );
+                builder: (context) =>
+                    InfoOrdemServicoScreen(ordemServicoId: os.id)),
+          ).then((_) =>
+              _fetchOrdensServico()); // Recarrega a lista ao voltar
         },
       ),
+    );
+  }
+
+  // Constrói o corpo da tela com base no estado
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorMessage != null) {
+      return Center(
+          child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)));
+    }
+    if (_ordensDoDia.isEmpty) {
+      return const Center(
+          child: Text('Nenhuma Ordem de Serviço para esta data.'));
+    }
+    return ListView.builder(
+      itemCount: _ordensDoDia.length,
+      itemBuilder: (context, index) {
+        return _buildOSCard(_ordensDoDia[index]);
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF12385D);
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primaryColor,
-        title: const Text(
-          'Agenda de Serviços',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Agenda de Serviços',
+            style: TextStyle(color: Colors.white)),
       ),
       body: Column(
         children: [
           _buildHeader(),
-          // A lista de O.S. ocupa todo o espaço restante
-          Expanded(
-            child: ListView.builder(
-              itemCount: _ordensDoDia.length,
-              itemBuilder: (context, index) {
-                return _buildOSCard(_ordensDoDia[index]);
-              },
-            ),
-          ),
+          Expanded(child: _buildBody()),
         ],
       ),
-      // Botão fixo no rodapé da tela
       persistentFooterButtons: [
         Container(
           width: double.infinity,
@@ -133,20 +159,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           child: ElevatedButton.icon(
             icon: const Icon(Icons.route_outlined),
             label: const Text('TRAÇAR MELHOR ROTA'),
-            onPressed: () {
-              // Lógica futura para otimização de rota
-            },
+            onPressed: () {},
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
             ),
           ),
-        ),
+        )
       ],
     );
   }
 }
+
