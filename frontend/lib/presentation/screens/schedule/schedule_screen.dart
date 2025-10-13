@@ -81,14 +81,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-              icon: const Icon(Icons.chevron_left, size: 30),
-              onPressed: () => _changeDate(-1)),
-          Text(DateFormat.yMMMMEEEEd('pt_BR').format(_selectedDate),
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            icon: const Icon(Icons.chevron_left, size: 30),
+            onPressed: () => _changeDate(-1),
+          ),
+          Text(
+            DateFormat.yMMMMEEEEd('pt_BR').format(_selectedDate),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           IconButton(
-              icon: const Icon(Icons.chevron_right, size: 30),
-              onPressed: () => _changeDate(1)),
+            icon: const Icon(Icons.chevron_right, size: 30),
+            onPressed: () => _changeDate(1),
+          ),
         ],
       ),
     );
@@ -99,18 +102,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
       child: ListTile(
-        title:
-            Text(os.titulo, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          os.titulo,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text('Ativo: ${os.ativo}'),
         trailing: const Icon(Icons.chevron_right),
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (context) =>
-                    InfoOrdemServicoScreen(ordemServicoId: os.id)),
-          ).then((_) =>
-              _fetchOrdensServico()); // Recarrega a lista ao voltar
+              builder:
+                  (context) => InfoOrdemServicoScreen(ordemServicoId: os.id),
+            ),
+          ).then((_) => _fetchOrdensServico()); // Recarrega a lista ao voltar
         },
       ),
     );
@@ -123,11 +128,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
     if (_errorMessage != null) {
       return Center(
-          child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)));
+        child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+      );
     }
     if (_ordensDoDia.isEmpty) {
       return const Center(
-          child: Text('Nenhuma Ordem de Serviço para esta data.'));
+        child: Text('Nenhuma Ordem de Serviço para esta data.'),
+      );
     }
     return ListView.builder(
       itemCount: _ordensDoDia.length,
@@ -143,15 +150,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primaryColor,
-        title: const Text('Agenda de Serviços',
-            style: TextStyle(color: Colors.white)),
-      ),
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(child: _buildBody()),
+        title: const Text(
+          'Agenda de Serviços',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            color: Colors.white,
+            onPressed: () => _fetchOrdensServico(),
+          ),
         ],
       ),
+
+      body: Column(children: [_buildHeader(), Expanded(child: _buildBody())]),
       persistentFooterButtons: [
         Container(
           width: double.infinity,
@@ -166,9 +178,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
           ),
-        )
+        ),
       ],
     );
   }
 }
-

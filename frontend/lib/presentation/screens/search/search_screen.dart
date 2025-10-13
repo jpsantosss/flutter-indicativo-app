@@ -94,6 +94,9 @@ class _SearchScreenState extends State<SearchScreen> {
         final List<Ativo> ativosCarregados =
             features.map((feature) => Ativo.fromJson(feature)).toList();
 
+        ativosCarregados.sort(
+          (a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()),
+        );
         setState(() {
           _ativos = ativosCarregados;
         });
