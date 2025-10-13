@@ -3,6 +3,9 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.gis.db import models as gis_models
 from django.conf import settings
 
+# Modelos para o banco de dados usando ORM (Object Relational Mapper) permitindo interagir com as tabelas, colunas e registros de dados com a sintaxe do Pyhton
+
+# Modelo para usuários
 class CustomUser(AbstractUser):
     CARGO_CHOICES = [
         ('tecnico', 'Técnico'),
@@ -39,6 +42,7 @@ class Ativo(models.Model):
         return self.nome
     
 
+# Modelo para Ordens de Servico
 class OrdemServico(models.Model):
     TIPO_CHOICES = [
         ('corretiva', 'Corretiva'),

@@ -8,6 +8,12 @@ class InfoAtivoScreen extends StatelessWidget {
 
   const InfoAtivoScreen({super.key, required this.ativo});
 
+/*  
+=========================== BLOCO 4 — ESTRUTURA E LÓGICA PRINCIPAL DA TELA ============================
+Este arquivo implementa a tela de informações detalhadas de um ativo (InfoAtivoScreen).  
+Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, marca, modelo, localização, manual etc.
+*/
+
   // Widget para os quadrados de indicadores (MTBF e MTTR)
   Widget _buildIndicatorCard(String title, String value, Color color) {
     return Expanded(
@@ -75,20 +81,6 @@ class InfoAtivoScreen extends StatelessWidget {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         title: Text(ativo.nome),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Editar Ativo',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditarAtivoScreen(ativo: ativo),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

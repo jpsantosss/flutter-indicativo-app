@@ -14,6 +14,29 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
+/*  
+==================================== BLOCO 1 — CHAMADA DE API ====================================
+Este arquivo implementa a tela de busca de ativos (SearchScreen), que permite 
+pesquisar ativos cadastrados no backend Django por meio de uma API.
+
+1. O campo de busca (TextField) está ligado a um TextEditingController 
+   (_searchController). Sempre que o texto muda, o listener _onSearchChanged() 
+   é acionado.
+
+2. Para evitar muitas requisições, foi implementado um "debounce" com Timer: 
+   - A cada tecla digitada, cancela o Timer anterior.
+   - Aguarda 500ms sem novas digitações → chama _fetchAtivos(query: ...).
+
+3. _fetchAtivos():
+   - Monta a URL base da API (/api/ativos/).
+   - Caso exista texto de busca, adiciona "?search=<termo>" na query.
+   - Faz uma requisição HTTP GET.
+   - Se sucesso (status 200), decodifica o JSON, extrai "features" e cria 
+     objetos Ativo a partir deles, armazenando no estado _ativos.
+   - Caso contrário, define mensagens de erro (_errorMessage).
+   - Usa os estados _isLoading, _errorMessage e _ativos para controlar o que 
+     aparece na tela.
+*/
 class _SearchScreenState extends State<SearchScreen> {
   // Controlador para o campo de pesquisa
   final _searchController = TextEditingController();
@@ -27,31 +50,24 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _fetchAtivos(); // Busca inicial
-    // Adiciona um "ouvinte" que é acionado sempre que o texto muda
     _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
-    // Limpa os recursos para evitar fugas de memória
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
 
-  // Função chamada a cada alteração no campo de pesquisa
   void _onSearchChanged() {
-    // Se já houver um timer a contar, cancela-o
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    // Cria um novo timer de 500ms. Se o utilizador não digitar mais nada
-    // durante este tempo, a função _fetchAtivos será chamada.
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _fetchAtivos(query: _searchController.text);
     });
   }
 
-  // Função ATUALIZADA para aceitar um termo de pesquisa
   Future<void> _fetchAtivos({String? query}) async {
     if (!_isLoading) {
       setState(() {
@@ -60,13 +76,10 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     }
 
-    // Monta a URL base
     // Use 'localhost' para web/iOS e '10.0.2.2' para o emulador Android
     String apiUrl = 'http://localhost:8000/api/ativos/';
 
-    // Se houver um termo de pesquisa, adiciona-o como parâmetro na URL
     if (query != null && query.isNotEmpty) {
-      // Uri.encodeComponent garante que caracteres especiais na busca sejam tratados corretamente
       apiUrl += '?search=${Uri.encodeComponent(query)}';
     }
 
@@ -102,7 +115,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // Constrói a UI com base no estado (loading, erro ou sucesso)
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -115,7 +127,6 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       );
     }
-    // Mostra uma mensagem diferente se a busca não retornou resultados
     if (_ativos.isEmpty && _searchController.text.isNotEmpty) {
       return const Center(
         child: Text('Nenhum ativo encontrado para a sua busca.'),
@@ -135,6 +146,7 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
     );
   }
+
 
   // Card individual para cada ativo
   Widget _buildAtivoCard(Ativo ativo) {
@@ -195,6 +207,44 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+
+/*  
+==================================== BLOCO 1 — INTERFACE DO USUÁRIO E INTERAÇÕES ====================================
+A tela é construída em cima de Scaffold, com barra superior, campo de busca, 
+lista de resultados e botão fixo para cadastrar novos ativos.
+
+1. AppBar:
+   - Título "Ativos" estilizado.
+   - Botão de "refresh" manual que chama _fetchAtivos() novamente.
+
+2. Campo de busca (TextField):
+   - Mostra ícone de lupa.
+   - Tem botão para limpar a pesquisa (ícone "X").
+   - Ligado ao _searchController, que dispara a pesquisa com debounce.
+
+3. Corpo (_buildBody):
+   - Se está carregando → mostra CircularProgressIndicator.
+   - Se houve erro → mostra mensagem em vermelho.
+   - Se não há resultados → mostra mensagens diferentes para "nenhum ativo 
+     encontrado" (quando buscou) ou "nenhum ativo cadastrado" (quando não há dados).
+   - Caso contrário, exibe lista de ativos com RefreshIndicator.
+
+4. _buildAtivoCard():
+   - Cria um Card estilizado para cada ativo da lista.
+   - Mostra o nome e três botões de ação:
+       a) Editar ativo (leva para EditarAtivoScreen).
+       b) Rota (futuro).
+       c) Informações do ativo (leva para InfoAtivoScreen).
+
+5. persistentFooterButtons:
+   - Botão fixo no rodapé chamado "CADASTRO DE ATIVO".
+   - Ao clicar, abre CadastroAtivoScreen.
+   - Se o usuário cadastrar com sucesso (retorno true), a tela limpa a busca 
+     e recarrega os ativos para incluir o novo.
+
+Resumindo: esta tela combina lógica de busca eficiente (debounce) com integração 
+à API e UI amigável para listar, editar, visualizar e cadastrar ativos.
+*/
   @override
   Widget build(BuildContext context) {
     return Scaffold(

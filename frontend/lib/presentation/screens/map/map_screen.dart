@@ -14,6 +14,31 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
+/*  
+==================================== BLOCO 1 — CHAMADA DE API ====================================
+Este arquivo implementa a tela do mapa principal (MapScreen), que utiliza o 
+Google Maps para exibir os "ativos" vindos da API em formato de marcadores.
+
+1. No initState(), duas coisas acontecem:
+   - _fetchAtivos() → busca os ativos no backend Django (endpoint /api/ativos/) 
+     usando http.get. A resposta JSON é decodificada, convertida em objetos Ativo 
+     e cada ativo vira um Marker no mapa.
+   - _getCurrentLocation() → obtém a localização atual do usuário com Geolocator, 
+     verificando se o serviço de localização está ativo e se as permissões foram 
+     concedidas. Caso positivo, a câmera do mapa é movida para a posição do usuário.
+
+2. Os marcadores (_markers) representam os ativos no mapa e possuem um onTap, que 
+   abre um BottomSheet (_showInfoBottomSheet) com ações rápidas sobre o ativo.
+
+3. O mapa em si é renderizado via GoogleMap(), com:
+   - myLocationEnabled = true → mostra o ponto azul da localização.
+   - myLocationButtonEnabled = false → remove o botão padrão, pois foi criado um
+     FloatingActionButton customizado para centralizar a câmera no usuário.
+   - initialCameraPosition → define um ponto inicial padrão antes de obter a localização real.
+
+4. Há também lógica de estado (_isLoading e _errorMessage) para exibir um 
+   indicador de carregamento ou mensagens de erro caso a API falhe.
+*/
 class _MapScreenState extends State<MapScreen> {
   late GoogleMapController _mapController;
   final Set<Marker> _markers = {};
@@ -25,7 +50,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _fetchAtivos();
-    _getCurrentLocation(); // 2. Chamada para obter a localização atual
+    _getCurrentLocation();
   }
 
   // Função para obter a localização atual do usuário e mover a câmera
@@ -124,6 +149,34 @@ class _MapScreenState extends State<MapScreen> {
       });
     }
   }
+
+
+/*  
+==================================== BLOCO 1 — INTERAÇÕES DO USUÁRIO E UI ====================================
+O foco aqui está na experiência do usuário com os ativos mostrados no mapa.
+
+1. _showInfoBottomSheet(ativo):
+   - Quando o usuário clica em um marcador, abre-se um modal na parte inferior 
+     da tela com informações do ativo.
+   - Dentro do modal, existem 3 botões circulares (construídos com _buildActionButton):
+        a) Solicitar O.S. → leva o usuário para a tela de solicitação de ordem de serviço.
+        b) Rotas → espaço reservado para futura implementação de rotas até o ativo.
+        c) Informações → leva para uma tela de detalhes do ativo selecionado.
+   - Este BottomSheet melhora a navegação sem poluir a tela principal do mapa.
+
+2. _buildActionButton():
+   - Cria botões padronizados com ícone, label e ação, estilizados em formato circular.
+   - Usado no BottomSheet para manter a consistência visual.
+
+3. Scaffold + AppBar:
+   - AppBar estilizada com cor personalizada e botão de refresh, que chama _fetchAtivos()
+     novamente para atualizar os marcadores.
+   - Body: um Stack com o mapa, o loading spinner ou mensagens de erro sobrepostos.
+   - FloatingActionButton: botão para centralizar a câmera na localização atual do usuário.
+
+No geral, este código integra a API de ativos com a exibição no Google Maps, 
+permitindo interação rápida com cada ativo diretamente pelo mapa.  
+*/
 
   Widget _buildActionButton({
     required IconData icon,

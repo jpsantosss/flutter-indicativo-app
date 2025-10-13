@@ -15,6 +15,16 @@ class EditarAtivoScreen extends StatefulWidget {
   State<EditarAtivoScreen> createState() => _EditarAtivoScreenState();
 }
 
+/*  
+==================================== BLOCO 1 — controladores ====================================
+Esta tela é responsável por **editar um ativo existente**.  
+Ela recebe como parâmetro um objeto Ativo e pré-carrega todos os campos com os dados atuais.
+
+1. Controladores:
+   - São criados vários TextEditingController para controlar os campos de texto (nome, marca, modelo, endereço, latitude, longitude, MTBF, MTTR etc).
+   - No initState, cada controlador é preenchido com os valores já cadastrados do ativo recebido.
+   - O dispose garante que todos os controladores sejam liberados da memória.
+*/
 class _EditarAtivoScreenState extends State<EditarAtivoScreen> {
   // Controladores para cada campo do formulário
   late TextEditingController _nomeController;
@@ -27,8 +37,8 @@ class _EditarAtivoScreenState extends State<EditarAtivoScreen> {
   late TextEditingController _mtbfController;
   late TextEditingController _mttrController;
 
-  PlatformFile? _manualFile; // Para um novo ficheiro de manual
-  String? _nomeArquivoManualExistente; // Para o manual que já existe
+  PlatformFile? _manualFile;
+  String? _nomeArquivoManualExistente;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -52,7 +62,6 @@ class _EditarAtivoScreenState extends State<EditarAtivoScreen> {
     );
     _mtbfController = TextEditingController(text: widget.ativo.mtbf ?? '');
     _mttrController = TextEditingController(text: widget.ativo.mttr ?? '');
-    // Extrai apenas o nome do ficheiro da URL
     if (widget.ativo.manualUrl != null && widget.ativo.manualUrl!.isNotEmpty) {
       _nomeArquivoManualExistente =
           Uri.parse(widget.ativo.manualUrl!).pathSegments.last;
@@ -84,10 +93,36 @@ class _EditarAtivoScreenState extends State<EditarAtivoScreen> {
       setState(() {
         _manualFile = result.files.first;
         _nomeArquivoManualExistente =
-            null; // Remove o manual antigo se um novo for selecionado
+            null;
       });
     }
   }
+
+  /*  
+==================================== BLOCO 1 — ENVIO DOS DADOS PARA API (FUNÇÃO _editarAtivo) ====================================
+1. Configuração da requisição:
+   - Monta a URL baseada no ID do ativo → /api/ativos/{id}/.
+   - Cria um MultipartRequest com método PUT para permitir envio de texto e arquivos juntos.
+
+2. Campos enviados:
+   - Envia dados básicos do ativo como nome, marca, modelo, periodicidade, endereço, MTBF e MTTR.
+   - Constrói a localização em formato GeoJSON (Point com [longitude, latitude]).
+   - Se o usuário escolheu um novo manual (PDF), o arquivo também é anexado à requisição:
+     - No Web → usa fromBytes.
+     - No Mobile/Desktop → usa fromPath.
+
+3. Resposta:
+   - A requisição é enviada e aguarda retorno.
+   - Se statusCode == 200 → sucesso, a tela fecha retornando "true".
+   - Caso contrário, extrai o corpo da resposta e mostra erro detalhado.
+   - Se ocorrer exceção (como falha de rede ou parse inválido), mostra mensagem genérica.
+
+4. Estados:
+   - _isLoading: controla exibição do CircularProgressIndicator no botão.
+   - _errorMessage: exibe mensagens de falha logo acima do botão de salvar.
+
+Resumindo: a função é responsável por **construir a requisição PUT multipart, anexar arquivos se houver, enviar para a API Django e tratar os resultados**.  
+*/
 
   // Função para enviar os dados atualizados para a API
   Future<void> _editarAtivo() async {

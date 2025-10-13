@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
-import 'package:http_parser/http_parser.dart'; // Para definir o tipo do ficheiro
+import 'package:http_parser/http_parser.dart';
 
 class CadastroAtivoScreen extends StatefulWidget {
   const CadastroAtivoScreen({super.key});
@@ -14,6 +14,21 @@ class CadastroAtivoScreen extends StatefulWidget {
   State<CadastroAtivoScreen> createState() => _CadastroAtivoScreenState();
 }
 
+/*  
+==================================== BLOCO 1 — ESTRUTURA DA TELA E FORMULÁRIOS ====================================
+Esta tela implementa o cadastro de um novo ativo.  
+Ela é formada por vários campos de entrada e um seletor de arquivo opcional (manual em PDF).  
+
+1. Controladores:
+   - Criados para cada campo de entrada: nome, marca, modelo, periodicidade, endereço, latitude e longitude.
+   - São instâncias de TextEditingController que capturam o texto digitado pelo usuário.
+
+2. Upload de manual:
+   - O usuário pode selecionar um arquivo PDF através do FilePicker.
+   - O arquivo escolhido é armazenado em _manualFile.
+   - Caso nenhum arquivo seja selecionado, é exibido um botão para upload.
+   - Se o arquivo existir, ele aparece em uma caixa com ícone de PDF, nome e opção de remover.
+*/
 class _CadastroAtivoScreenState extends State<CadastroAtivoScreen> {
   final _nomeController = TextEditingController();
   final _marcaController = TextEditingController();
@@ -44,9 +59,38 @@ class _CadastroAtivoScreenState extends State<CadastroAtivoScreen> {
     }
   }
 
-  // Função ATUALIZADA para enviar dados e o ficheiro
+  /*  
+==================================== BLOCO 1 — ENVIO DOS DADOS PARA API (FUNÇÃO _cadastrarAtivo) ====================================
+O método _cadastrarAtivo é responsável por enviar os dados preenchidos para a API Django via POST.
+
+1. Validação inicial:
+   - Verifica se os campos obrigatórios (nome, latitude e longitude) estão preenchidos.
+   - Se não estiverem, exibe mensagem de erro e não envia requisição.
+
+2. Montagem da requisição:
+   - Cria um http.MultipartRequest com método POST para /api/ativos/.
+   - Adiciona os campos de texto básicos (nome, marca, modelo, periodicidade, endereço).
+   - Constrói a localização no formato GeoJSON (Point → coordinates [longitude, latitude]) e envia como string JSON.
+
+3. Upload do manual:
+   - Se o usuário escolheu um PDF, ele é adicionado na requisição.
+   - No Web → usa fromBytes com os bytes do arquivo.
+   - No Mobile/Desktop → usa fromPath com o caminho do arquivo.
+
+4. Resposta do servidor:
+   - Se statusCode == 201 → cadastro bem-sucedido, tela é fechada retornando "true".
+   - Se status diferente, pega o corpo da resposta e mostra mensagem de erro detalhada.
+   - Em caso de exceção (rede/dados inválidos), mostra mensagem genérica de falha.
+
+5. Estados:
+   - _isLoading controla exibição do CircularProgressIndicator no botão.
+   - _errorMessage guarda os erros para exibição na interface.
+
+Resumindo: este método faz toda a **comunicação com a API Django para cadastrar o ativo**,  
+tratando envio de texto, coordenadas geográficas e manual em PDF.  
+*/
+
   Future<void> _cadastrarAtivo() async {
-    // ... a validação inicial continua a mesma
     if (_nomeController.text.isEmpty ||
         _latitudeController.text.isEmpty ||
         _longitudeController.text.isEmpty) {

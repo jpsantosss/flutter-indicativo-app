@@ -4,20 +4,65 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from rest_framework import serializers
 from .models import Ativo, OrdemServico
 
+
+##
+## --- serializers.py ---
+## Componente usado para converter dados complexos (como objetos de modelo) 
+## em formatos que podem ser facilmente transmitidos, como JSON ou XML, e vice-versa
+##
+
+
+"""
+============================== BLOCO 1 — AtivoSerializer ==============================
+
+Esta classe é um **serializador especializado para modelos geográficos (GeoDjango)**,
+usando o `GeoFeatureModelSerializer` da biblioteca `rest_framework_gis`.  
+Ela converte objetos do modelo `Ativo` em formato GeoJSON (usado em mapas) e também
+lida com a criação/atualização desses objetos a partir desse formato.
+
+--- PRINCIPAIS PONTOS ---
+• O campo `geo_field = "localizacao"` indica que o atributo geográfico do modelo é
+  um campo `PointField`, ou seja, contém coordenadas geográficas (latitude e longitude).
+• Os campos listados em `fields` definem quais atributos do modelo serão expostos
+  ou aceitos via API.
+
+--- MÉTODO create() ---
+Esse método sobrescreve a criação padrão do serializer para processar o campo de localização,
+já que ele chega como um JSON (GeoJSON) e precisa ser transformado em um objeto `Point`.
+
+1. Remove o campo `localizacao` de `validated_data` e o converte de string JSON para dicionário.
+2. Extrai `longitude` e `latitude` de `localizacao_data['coordinates']`.
+3. Cria um objeto `Point(longitude, latitude)` do GeoDjango.
+4. Cria um novo `Ativo` passando o ponto e os demais campos validados.
+5. Retorna o objeto recém-criado.
+
+--- MÉTODO update() ---
+Esse método personaliza o processo de atualização de um `Ativo`, garantindo que o
+campo `localizacao` (caso enviado) seja tratado corretamente e os demais campos
+sejam atualizados individualmente.
+
+1. Verifica se `localizacao` foi enviado na requisição:
+   - Se sim, ele faz o mesmo processo do `create`: converte JSON → Point e substitui
+     o campo `localizacao` do objeto.
+2. Atualiza todos os outros campos com os novos valores, se fornecidos, 
+   mantendo os anteriores caso não sejam enviados.
+3. Trata o caso do campo `manual` (upload de arquivo) — se um novo for enviado, substitui.
+4. Salva o objeto atualizado no banco.
+5. Retorna a instância modificada.
+
+Em resumo, o `AtivoSerializer` garante que dados geográficos e arquivos sejam
+corretamente processados tanto na criação quanto na edição de ativos, 
+permitindo a integração com mapas e coordenadas no frontend.
+
+========================================================================================
+"""
 class AtivoSerializer(GeoFeatureModelSerializer):
-    """
-    Um GeoFeatureModelSerializer que sabe como criar e ATUALIZAR um Ativo
-    a partir de dados GeoJSON.
-    """
     class Meta:
         model = Ativo
         geo_field = "localizacao"
         fields = ('id', 'nome', 'marca', 'modelo', 'periodicidade', 'manual', 'endereco', 'localizacao', 'mtbf', 'mttr')
 
     def create(self, validated_data):
-        """
-        Sobrescreve o método de criação para lidar com o campo PointField.
-        """
         localizacao_data = json.loads(validated_data.pop('localizacao'))
         longitude = localizacao_data['coordinates'][0]
         latitude = localizacao_data['coordinates'][1]
@@ -25,19 +70,13 @@ class AtivoSerializer(GeoFeatureModelSerializer):
         ativo = Ativo.objects.create(localizacao=ponto, **validated_data)
         return ativo
 
-    # MÉTODO DE ATUALIZAÇÃO
     def update(self, instance, validated_data):
-        """
-        Sobrescreve o método de atualização para lidar com o campo PointField.
-        """
-        # Se 'localizacao' foi enviado nos dados, processa-o
         if 'localizacao' in validated_data:
             localizacao_data = json.loads(validated_data.pop('localizacao'))
             longitude = localizacao_data['coordinates'][0]
             latitude = localizacao_data['coordinates'][1]
             instance.localizacao = Point(longitude, latitude)
 
-        # Atualiza os outros campos do modelo
         instance.nome = validated_data.get('nome', instance.nome)
         instance.marca = validated_data.get('marca', instance.marca)
         instance.modelo = validated_data.get('modelo', instance.modelo)
@@ -46,21 +85,52 @@ class AtivoSerializer(GeoFeatureModelSerializer):
         instance.mtbf = validated_data.get('mtbf', instance.mtbf)
         instance.mttr = validated_data.get('mttr', instance.mttr)
         
-        # Lida com o upload do manual (se um novo ficheiro for enviado)
         if 'manual' in validated_data:
             instance.manual = validated_data.get('manual', instance.manual)
 
         instance.save()
         return instance
 
+
+
+"""
+========================== BLOCO 2 — OrdemServicoSerializer ===========================
+Este é um serializer padrão do Django REST Framework para o modelo `OrdemServico`.
+
+--- FUNÇÃO PRINCIPAL ---
+Converter objetos `OrdemServico` em JSON para exibição na API e
+receber dados JSON para criar novas ordens de serviço.
+
+--- CAMPOS PERSONALIZADOS ---
+• `solicitante = serializers.StringRelatedField(read_only=True)`
+  → Exibe o nome legível do solicitante, usando o método `__str__` do modelo relacionado.
+
+• `ativo_nome = serializers.CharField(source='ativo.nome', read_only=True, allow_null=True)`
+  → Adiciona um campo derivado que mostra apenas o nome do ativo associado, sem precisar
+    retornar o objeto completo.  
+  → O `allow_null=True` evita erros quando a ordem de serviço não está ligada a nenhum ativo.
+
+--- Meta ---
+• O `model` define que este serializer trabalha com o modelo `OrdemServico`.
+• `fields` define quais atributos serão incluídos no JSON retornado.
+  Inclui:
+  - Dados principais: `titulo`, `tipo`, `descricao`, `status`
+  - Relacionamentos: `ativo`, `ativo_nome`, `solicitante`
+  - Datas de criação e previsão.
+• `read_only_fields` protege certos campos de edição pela API
+  (por exemplo, `status`, `data_criacao` e `solicitante` só podem ser definidos internamente).
+
+Em resumo, o `OrdemServicoSerializer` organiza e controla
+como as ordens de serviço são representadas e validadas pela API, 
+permitindo leitura e criação de dados de forma segura e consistente.
+========================================================================================
+"""
 class OrdemServicoSerializer(serializers.ModelSerializer):
     solicitante = serializers.StringRelatedField(read_only=True)
-    # <<< CORREÇÃO: Adicionado 'allow_null=True' para evitar erros se o ativo for nulo
     ativo_nome = serializers.CharField(source='ativo.nome', read_only=True, allow_null=True)
 
     class Meta:
         model = OrdemServico
-        # <<< CORREÇÃO: Adicionado o campo 'prioridade' que faltava
         fields = (
             'id', 'titulo', 'tipo', 'descricao', 'status', 
             'ativo', 'ativo_nome', 'data_criacao', 'data_prevista', 'solicitante', 
