@@ -142,9 +142,22 @@ class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
               const Divider(height: 32),
 
               // --- CAMPO TÍTULO ---
-              const Text(
-                'Título da Solicitação',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    'Título da Solicitação',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    ' *',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               TextField(
@@ -168,6 +181,9 @@ class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
                 subtitle: const Text('O ativo apresenta uma falha.'),
                 value: TipoOS.corretiva,
                 groupValue: _tipoSelecionado,
+                fillColor: MaterialStateColor.resolveWith(
+                  (states) => Color(0xFF12385D),
+                ),
                 onChanged: (value) {
                   setState(() {
                     _tipoSelecionado = value;
@@ -179,6 +195,9 @@ class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
                 subtitle: const Text('Sinais de possível falha futura.'),
                 value: TipoOS.preditiva,
                 groupValue: _tipoSelecionado,
+                fillColor: MaterialStateColor.resolveWith(
+                  (states) => Color(0xFF12385D),
+                ),
                 onChanged: (value) {
                   setState(() {
                     _tipoSelecionado = value;
@@ -188,9 +207,22 @@ class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
               const SizedBox(height: 24),
 
               // --- DATA PREVISTA ---
-              const Text(
-                'Data Prevista para Execução',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    'Data Prevista',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    ' *',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               SizedBox(
