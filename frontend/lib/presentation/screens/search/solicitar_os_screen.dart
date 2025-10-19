@@ -163,7 +163,7 @@ class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
               TextField(
                 controller: _tituloController,
                 decoration: InputDecoration(
-                  hintText: 'Ex: Câmara do portão principal sem imagem',
+                  hintText: '...',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -260,7 +260,7 @@ class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
                 controller: _descricaoController,
                 maxLines: 5,
                 decoration: InputDecoration(
-                  hintText: 'Descreva o problema ou o sintoma observado...',
+                  hintText: 'Descreva o problema ou o sintoma observado.',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

@@ -226,7 +226,7 @@ tratando envio de texto, coordenadas geográficas e manual em PDF.
             TextField(
               controller: _nomeController,
               decoration: InputDecoration(
-                hintText: 'Ex: Câmara Portão Principal',
+                hintText: 'Ex: Câmera',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -282,7 +282,7 @@ tratando envio de texto, coordenadas geográficas e manual em PDF.
             TextField(
               controller: _modeloController,
               decoration: InputDecoration(
-                hintText: 'Ex: VHD 3230 B G4',
+                hintText: 'Ex: VHD',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

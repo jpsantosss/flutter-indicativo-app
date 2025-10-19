@@ -32,7 +32,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       _errorMessage = null;
     });
 
-    // Formata a data para o formato YYYY-MM-DD que o backend espera
     final String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
     // Usa 'localhost' para web e '10.0.2.2' para o emulador Android
     final String apiUrl =
@@ -65,7 +64,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  // Função para mudar a data e buscar os novos dados
   void _changeDate(int days) {
     setState(() {
       _selectedDate = _selectedDate.add(Duration(days: days));
@@ -73,7 +71,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     _fetchOrdensServico();
   }
 
-  // Cabeçalho para navegar entre os dias
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -97,31 +94,47 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  // Widget que cria um card para cada O.S.
+  // <<< WIDGET DO CARD ATUALIZADO >>>
   Widget _buildOSCard(OrdemServico os) {
+    // Verifica se a O.S. está finalizada
+    final bool isFinalizada = os.status == StatusOS.finalizada;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+      // Adiciona uma cor de fundo diferente para dar feedback visual
+      color: isFinalizada ? Colors.grey.shade200 : null,
       child: ListTile(
         title: Text(
           os.titulo,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            // Adiciona um estilo de texto riscado se estiver finalizada
+            decoration: isFinalizada ? TextDecoration.lineThrough : null,
+            color: isFinalizada ? Colors.grey.shade600 : null,
+          ),
         ),
         subtitle: Text('Ativo: ${os.ativo}'),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => InfoOrdemServicoScreen(ordemServicoId: os.id),
-            ),
-          ).then((_) => _fetchOrdensServico()); // Recarrega a lista ao voltar
-        },
+        // Muda o ícone para indicar o estado de conclusão
+        trailing: Icon(
+          isFinalizada ? Icons.check_circle : Icons.chevron_right,
+          color: isFinalizada ? Colors.green : null,
+        ),
+        // Desabilita a função onTap se a O.S. estiver finalizada
+        onTap: isFinalizada
+            ? null
+            : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        InfoOrdemServicoScreen(ordemServicoId: os.id),
+                  ),
+                ).then((_) => _fetchOrdensServico()); // Recarrega a lista ao voltar
+              },
       ),
     );
   }
 
-  // Constrói o corpo da tela com base no estado
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -162,7 +175,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
         ],
       ),
-
       body: Column(children: [_buildHeader(), Expanded(child: _buildBody())]),
       persistentFooterButtons: [
         Container(
@@ -183,3 +195,4 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 }
+
