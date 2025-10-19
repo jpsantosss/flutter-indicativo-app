@@ -16,7 +16,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   // Variáveis de estado
   bool _isLoading = true;
-  List<OrdemServico> _ordensDoDia = [];
+  List<OrdemServico> _todasAsOrdensPendentes = []; // Armazena todas as O.S. pendentes
+  List<OrdemServico> _ordensFiltradas = []; // Armazena as O.S. para a data selecionada
   String? _errorMessage;
 
   @override
@@ -25,17 +26,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     _fetchOrdensServico();
   }
 
-  // Função para buscar as O.S. da API para a data selecionada
+  // Função para buscar as O.S. da API
   Future<void> _fetchOrdensServico() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    final String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    // Usa 'localhost' para web e '10.0.2.2' para o emulador Android
-    final String apiUrl =
-        'http://localhost:8000/api/ordens-servico/?data_prevista=$formattedDate';
+    // <<< ALTERAÇÃO: Busca todas as O.S. com status 'pendente' de uma só vez
+    const String apiUrl = 'http://localhost:8000/api/ordens-servico/?status=pendente';
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -43,8 +42,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
         final List<OrdemServico> ordens =
             data.map((json) => OrdemServico.fromJson(json)).toList();
+        
         setState(() {
-          _ordensDoDia = ordens;
+          _todasAsOrdensPendentes = ordens;
+          // Após buscar, aplica o filtro inicial para a data atual
+          _filtrarOrdensPorData();
         });
       } else {
         setState(() {
@@ -64,11 +66,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
+  // <<< NOVA FUNÇÃO: Filtra a lista localmente sem precisar de chamar a API novamente
+  void _filtrarOrdensPorData() {
+    // Normaliza a data selecionada para ignorar as horas
+    final dataSelecionadaSemHoras = DateUtils.dateOnly(_selectedDate);
+
+    setState(() {
+      _ordensFiltradas = _todasAsOrdensPendentes.where((os) {
+        // Normaliza a data prevista da O.S.
+        final dataPrevistaSemHoras = DateUtils.dateOnly(os.dataPrevista);
+        // Mantém a O.S. se a sua data prevista for no mesmo dia ou depois da data selecionada
+        return !dataPrevistaSemHoras.isBefore(dataSelecionadaSemHoras);
+      }).toList();
+    });
+  }
+
+
   void _changeDate(int days) {
     setState(() {
       _selectedDate = _selectedDate.add(Duration(days: days));
+      // <<< ALTERAÇÃO: Apenas aplica o filtro local, não chama a API
+      _filtrarOrdensPorData();
     });
-    _fetchOrdensServico();
   }
 
   Widget _buildHeader() {
@@ -82,7 +101,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             onPressed: () => _changeDate(-1),
           ),
           Text(
-            DateFormat.yMMMMEEEEd('pt_BR').format(_selectedDate),
+            DateFormat('EEEE, dd/MM/yyyy', 'pt_BR').format(_selectedDate),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           IconButton(
@@ -94,32 +113,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  // <<< WIDGET DO CARD ATUALIZADO >>>
+  // O Widget do card permanece o mesmo
   Widget _buildOSCard(OrdemServico os) {
-    // Verifica se a O.S. está finalizada
     final bool isFinalizada = os.status == StatusOS.finalizada;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-      // Adiciona uma cor de fundo diferente para dar feedback visual
       color: isFinalizada ? Colors.grey.shade200 : null,
       child: ListTile(
         title: Text(
           os.titulo,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            // Adiciona um estilo de texto riscado se estiver finalizada
             decoration: isFinalizada ? TextDecoration.lineThrough : null,
             color: isFinalizada ? Colors.grey.shade600 : null,
           ),
         ),
-        subtitle: Text('Ativo: ${os.ativo}'),
-        // Muda o ícone para indicar o estado de conclusão
+        subtitle: Text('Ativo: ${os.ativo}\nData Prevista: ${DateFormat('dd/MM/yyyy').format(os.dataPrevista)}'),
+        isThreeLine: true,
         trailing: Icon(
           isFinalizada ? Icons.check_circle : Icons.chevron_right,
           color: isFinalizada ? Colors.green : null,
         ),
-        // Desabilita a função onTap se a O.S. estiver finalizada
         onTap: isFinalizada
             ? null
             : () {
@@ -129,7 +144,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     builder: (context) =>
                         InfoOrdemServicoScreen(ordemServicoId: os.id),
                   ),
-                ).then((_) => _fetchOrdensServico()); // Recarrega a lista ao voltar
+                ).then((_) => _fetchOrdensServico());
               },
       ),
     );
@@ -144,15 +159,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
       );
     }
-    if (_ordensDoDia.isEmpty) {
+    // <<< ALTERAÇÃO: Verifica a lista filtrada
+    if (_ordensFiltradas.isEmpty) {
       return const Center(
-        child: Text('Nenhuma Ordem de Serviço para esta data.'),
+        child: Text('Nenhuma O.S. pendente para esta data ou datas futuras.'),
       );
     }
     return ListView.builder(
-      itemCount: _ordensDoDia.length,
+      // <<< ALTERAÇÃO: Usa a lista filtrada
+      itemCount: _ordensFiltradas.length,
       itemBuilder: (context, index) {
-        return _buildOSCard(_ordensDoDia[index]);
+        return _buildOSCard(_ordensFiltradas[index]);
       },
     );
   }
