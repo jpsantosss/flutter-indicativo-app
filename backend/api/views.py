@@ -2,12 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
-from django.contrib.auth import authenticate, get_user_model
-from rest_framework import viewsets, permissions
-from .models import Ativo, OrdemServico
-from .serializers import AtivoSerializer, OrdemServicoSerializer
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
+from rest_framework import viewsets, permissions, status
+from django.contrib.auth import authenticate, get_user_model
 from django_filters import rest_framework as filters
+from .models import Ativo, OrdemServico, Manutencao
+from .serializers import AtivoSerializer, OrdemServicoSerializer, FinalizarOSSerializer
 
 ##
 ## --- view.py ---
@@ -113,16 +114,25 @@ com suporte a listagem, busca e edição completa via API.
 ====================================================================================
 """
 class AtivoViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint que permite que ativos sejam vistos ou editados.
-    """
-    ## Visualização
     queryset = Ativo.objects.all()
     serializer_class = AtivoSerializer
-
-    ## Busca
+    permission_classes = [permissions.AllowAny]
     filter_backends = [SearchFilter]
-    search_fields = ['nome'] # Define que a pesquisa deve ser feita no campo 'nome'
+    search_fields = ['nome']
+
+    # <<< NOVA AÇÃO CUSTOMIZADA PARA BUSCAR O HISTÓRICO
+    @action(detail=True, methods=['get'])
+    def historico(self, request, pk=None):
+        """
+        Endpoint que retorna o histórico de Ordens de Serviço finalizadas para um ativo específico.
+        URL: /api/ativos/{id}/historico/
+        """
+        ativo = self.get_object() # Pega o ativo específico (ex: ativo de id=1)
+        # Filtra as O.S. relacionadas a este ativo que tenham o status 'finalizada'
+        historico_os = ativo.ordens_servico.filter(status='finalizada').order_by('-data_criacao')
+        # Serializa os dados para serem enviados como resposta
+        serializer = OrdemServicoSerializer(historico_os, many=True)
+        return Response(serializer.data)
 
 
 """
@@ -158,10 +168,45 @@ class OrdemServicoViewSet(viewsets.ModelViewSet):
     """
     API endpoint que permite que Ordens de Serviço sejam vistas ou criadas.
     """
-    queryset = OrdemServico.objects.all().order_by('-data_criacao')
+    queryset = OrdemServico.objects.all().order_by('data_prevista')
     serializer_class = OrdemServicoSerializer
-    # Permite acesso público para o modo de desenvolvimento
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.AllowAny] # Para desenvolvimento
+
+    @action(detail=True, methods=['post'])
+    def finalizar(self, request, pk=None):
+        """
+        Endpoint customizado para finalizar uma O.S. e criar o registo de manutenção.
+        URL: /api/ordens-servico/{id}/finalizar/
+        """
+        ordem_servico = self.get_object() # Pega a O.S. específica (ex: O.S. de id=5)
+
+        # Valida os dados recebidos do Flutter (datas, observações)
+        serializer = FinalizarOSSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            
+            # Calcula o tempo gasto
+            tempo_gasto = data['data_fim_execucao'] - data['data_inicio_execucao']
+
+            # Cria o registo de Manutenção
+            Manutencao.objects.create(
+                ordem_servico=ordem_servico,
+                # No futuro, usaremos o utilizador autenticado: request.user
+                usuario_executor=None, 
+                data_inicio_execucao=data['data_inicio_execucao'],
+                data_fim_execucao=data['data_fim_execucao'],
+                tempo_gasto=tempo_gasto,
+                observacoes=data.get('observacoes', '')
+            )
+
+            # Atualiza o status da O.S. para "finalizada"
+            ordem_servico.status = 'finalizada'
+            ordem_servico.save()
+
+            return Response({'status': 'Ordem de serviço finalizada com sucesso'}, status=status.HTTP_200_OK)
+        else:
+            # Se a validação falhar (ex: data de fim antes do início), retorna um erro
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def perform_create(self, serializer):
         # Como o acesso é público, o solicitante será nulo por enquanto.
@@ -203,3 +248,4 @@ class OrdemServicoFilter(filters.FilterSet):
     class Meta:
         model = OrdemServico
         fields = ['data_prevista', 'status', 'tipo']
+

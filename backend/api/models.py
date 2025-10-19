@@ -65,3 +65,15 @@ class OrdemServico(models.Model):
 
     def __str__(self):
         return f"O.S. #{self.id} - {self.titulo}"
+
+#Modelo para Manutenção
+class Manutencao(models.Model):
+    ordem_servico = models.OneToOneField(OrdemServico, on_delete=models.CASCADE, primary_key=True)
+    usuario_executor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    data_inicio_execucao = models.DateTimeField()
+    data_fim_execucao = models.DateTimeField()
+    tempo_gasto = models.DurationField()
+    observacoes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Manutenção para OS #{self.ordem_servico.id}"

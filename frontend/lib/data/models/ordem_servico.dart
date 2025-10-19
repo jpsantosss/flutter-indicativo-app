@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_tcc/data/models/manutencao.dart';
 
 // Enums para representar as escolhas do backend
 enum StatusOS { pendente, finalizada, cancelada }
-
 
 class OrdemServico {
   final int id;
@@ -14,6 +13,7 @@ class OrdemServico {
   final String tipoManutencao;
   final StatusOS status;
   final String? descricao; // Pode ser nulo
+  final Manutencao? manutencao;
 
   OrdemServico({
     required this.id,
@@ -25,6 +25,7 @@ class OrdemServico {
     required this.tipoManutencao,
     required this.status,
     this.descricao,
+    this.manutencao,
   });
 
   // Função auxiliar para converter uma string no enum StatusOS
@@ -57,6 +58,9 @@ class OrdemServico {
       tipoManutencao: json['tipo'] ?? 'Não especificado',
       descricao: json['descricao'],
       status: _statusFromString(json['status']),
+      manutencao: json['manutencao'] != null
+        ? Manutencao.fromJson(json['manutencao'])
+        : null,
     );
   }
 }

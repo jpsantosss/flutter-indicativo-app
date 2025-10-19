@@ -2,17 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ativo.dart';
 import 'package:flutter_tcc/presentation/screens/search/editar_ativo_screen.dart';
 import 'package:flutter_tcc/presentation/screens/search/solicitar_os_screen.dart';
+import 'package:flutter_tcc/presentation/screens/search/historico_os_ativo_screen.dart';
 
 class InfoAtivoScreen extends StatelessWidget {
   final Ativo ativo;
-
   const InfoAtivoScreen({super.key, required this.ativo});
-
-/*  
-=========================== BLOCO 4 — ESTRUTURA E LÓGICA PRINCIPAL DA TELA ============================
-Este arquivo implementa a tela de informações detalhadas de um ativo (InfoAtivoScreen).  
-Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, marca, modelo, localização, manual etc.
-*/
 
   // Widget para os quadrados de indicadores (MTBF e MTTR)
   Widget _buildIndicatorCard(String title, String value, Color color) {
@@ -29,23 +23,17 @@ Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, mar
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+              Text(title,
+                  style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
               const SizedBox(height: 8),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
-                ),
-              ),
+              Text(value,
+                  style: const TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22)),
             ],
           ),
         ),
@@ -62,10 +50,8 @@ Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, mar
         children: [
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(color: Colors.black87, fontSize: 18),
-          ),
+          Text(value,
+              style: const TextStyle(color: Colors.black87, fontSize: 18)),
           const Divider(height: 24),
         ],
       ),
@@ -81,6 +67,19 @@ Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, mar
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         title: Text(ativo.nome),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Editar Ativo',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => EditarAtivoScreen(ativo: ativo)),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -91,20 +90,37 @@ Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, mar
             Row(
               children: [
                 _buildIndicatorCard(
-                  'MTBF',
-                  ativo.mtbf ?? 'N/A',
-                  Colors.green.shade700,
-                ),
+                    'MTBF', ativo.mtbf ?? 'N/A', Colors.green.shade700),
                 const SizedBox(width: 16),
                 _buildIndicatorCard(
-                  'MTTR',
-                  ativo.mttr ?? 'N/A',
-                  Colors.orange.shade800,
-                ),
+                    'MTTR', ativo.mttr ?? 'N/A', Colors.orange.shade800),
               ],
             ),
             const SizedBox(height: 24),
-
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.history),
+                label: const Text('HISTÓRICO DE MANUTENÇÕES'),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HistoricoOsAtivoScreen(
+                        ativoId: ativo.id,
+                        ativoNome: ativo.nome,
+                      ),
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.grey.shade700,
+                  side: BorderSide(color: Colors.grey.shade300),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             // -- DETALHES DO ATIVO --
             const Text(
               'Detalhes do Ativo',
@@ -116,16 +132,14 @@ Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, mar
             _buildInfoRow('Marca', ativo.marca),
             _buildInfoRow('Modelo', ativo.modelo),
             _buildInfoRow(
-              'Periodicidade da Manutenção',
-              '${ativo.periodicidade} dias',
-            ),
+                'Periodicidade da Manutenção', '${ativo.periodicidade} dias'),
             _buildInfoRow('Endereço', ativo.endereco),
             _buildInfoRow('Latitude', ativo.latitude.toString()),
             _buildInfoRow('Longitude', ativo.longitude.toString()),
             _buildInfoRow(
-              'Manual',
-              ativo.manualUrl ?? 'Nenhum manual cadastrado',
-            ),
+                'Manual', ativo.manualUrl ?? 'Nenhum manual cadastrado'),
+
+            // -- BOTÃO DE HISTÓRICO --
           ],
         ),
       ),
@@ -145,9 +159,6 @@ Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, mar
                     backgroundColor: primaryColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                 ),
               ),
@@ -160,9 +171,8 @@ Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, mar
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (context) =>
-                                SolicitarOSScreen(ativo: ativo),
+                        builder: (context) =>
+                            SolicitarOSScreen(ativo: ativo),
                       ),
                     );
                   },
@@ -170,9 +180,6 @@ Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, mar
                     backgroundColor: Colors.orange.shade800,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                   ),
                 ),
               ),
@@ -183,3 +190,4 @@ Ela recebe um objeto Ativo por parâmetro e exibe dados completos como nome, mar
     );
   }
 }
+

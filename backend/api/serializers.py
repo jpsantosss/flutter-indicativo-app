@@ -2,7 +2,7 @@ import json
 from django.contrib.gis.geos import Point
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from rest_framework import serializers
-from .models import Ativo, OrdemServico
+from .models import Ativo, OrdemServico, Manutencao
 
 
 ##
@@ -125,14 +125,41 @@ como as ordens de serviço são representadas e validadas pela API,
 permitindo leitura e criação de dados de forma segura e consistente.
 ========================================================================================
 """
+class ManutencaoSerializer(serializers.ModelSerializer):
+    # Mostra o nome do executor em vez do ID
+    usuario_executor = serializers.StringRelatedField()
+
+    class Meta:
+        model = Manutencao
+        fields = ('usuario_executor', 'data_inicio_execucao', 'data_fim_execucao', 'tempo_gasto', 'observacoes')
+
+
+# <<< SERIALIZER DA ORDEM DE SERVIÇO ATUALIZADO >>>
 class OrdemServicoSerializer(serializers.ModelSerializer):
     solicitante = serializers.StringRelatedField(read_only=True)
     ativo_nome = serializers.CharField(source='ativo.nome', read_only=True, allow_null=True)
+    # Inclui os detalhes da manutenção no JSON da O.S.
+    manutencao = ManutencaoSerializer(read_only=True)
 
     class Meta:
         model = OrdemServico
         fields = (
             'id', 'titulo', 'tipo', 'descricao', 'status', 
-            'ativo', 'ativo_nome', 'data_criacao', 'data_prevista', 'solicitante', 
+            'ativo', 'ativo_nome', 'data_criacao', 'data_prevista', 'solicitante', 'manutencao'
         )
-        read_only_fields = ('status', 'data_criacao', 'solicitante', 'ativo_nome')
+        read_only_fields = ('status', 'data_criacao', 'solicitante', 'ativo_nome', 'manutencao')
+
+
+class FinalizarOSSerializer(serializers.Serializer):
+    """
+    Serializer para validar os dados enviados ao finalizar uma O.S.
+    """
+    data_inicio_execucao = serializers.DateTimeField()
+    data_fim_execucao = serializers.DateTimeField()
+    observacoes = serializers.CharField(allow_blank=True, required=False)
+
+    def validate(self, data):
+        """ Garante que a data de fim seja posterior à de início. """
+        if data['data_inicio_execucao'] >= data['data_fim_execucao']:
+            raise serializers.ValidationError("A data de fim deve ser posterior à data de início.")
+        return data
