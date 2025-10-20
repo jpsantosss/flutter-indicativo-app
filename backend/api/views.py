@@ -1,3 +1,5 @@
+import requests
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -17,6 +19,45 @@ from .serializers import AtivoSerializer, OrdemServicoSerializer, FinalizarOSSer
 ## com modelos e templates, e finalmente renderizar uma página HTML ou outro tipo de resposta
 ## (como um redirecionamento, JSON, etc.) para o usuário. 
 ##
+
+class RouteProxyView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        start_lat = request.data.get('start_lat')
+        start_lng = request.data.get('start_lng')
+        end_lat = request.data.get('end_lat')
+        end_lng = request.data.get('end_lng')
+
+        if not all([start_lat, start_lng, end_lat, end_lng]):
+            return Response({'error': 'Coordenadas de origem e destino são obrigatórias.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        google_api_url = 'https://maps.googleapis.com/maps/api/directions/json'
+        params = {
+            'origin': f'{start_lat},{start_lng}',
+            'destination': f'{end_lat},{end_lng}',
+            'key': settings.GOOGLE_MAPS_API_KEY,
+            'mode': 'driving',
+        }
+
+        try:
+            # <<< LOG DE DEPURAÇÃO ADICIONADO AQUI
+            # print("--- A FAZER PEDIDO PARA A API DE DIREÇÕES DA GOOGLE ---")
+            # print(f"URL: {google_api_url}")
+            # print(f"Parâmetros: {params}")
+            # print("----------------------------------------------------")
+
+            response = requests.get(google_api_url, params=params)
+            response.raise_for_status()
+            
+            # <<< LOG DE DEPURAÇÃO DA RESPOSTA
+            # print("--- RESPOSTA RECEBIDA DA GOOGLE ---")
+            # print(response.json())
+            # print("-----------------------------------")
+            
+            return Response(response.json())
+        except requests.exceptions.RequestException as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 """
 ================================= BLOCO 1 — LoginView =================================

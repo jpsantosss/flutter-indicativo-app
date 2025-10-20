@@ -211,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Container(color: accentColor, height: 5),
             Container(
               color: Colors.white,
-              height: 100,
+              height: 50,
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(

@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import LoginView, AtivoViewSet, OrdemServicoViewSet
+from .views import LoginView, AtivoViewSet, OrdemServicoViewSet, RouteProxyView
 
 """
 ================================ BLOCO ÚNICO — urls.py =================================
@@ -53,5 +53,6 @@ router.register(r'ordens-servico', OrdemServicoViewSet, basename='ordemservico')
 # As URLs da API são agora determinadas automaticamente pelo router.
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
+    path('get-route/', RouteProxyView.as_view(), name='get-route'),
     path('', include(router.urls)),
 ]
