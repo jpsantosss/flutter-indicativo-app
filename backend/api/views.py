@@ -20,44 +20,82 @@ from .serializers import AtivoSerializer, OrdemServicoSerializer, FinalizarOSSer
 ## (como um redirecionamento, JSON, etc.) para o usuário. 
 ##
 
+import requests
+from django.conf import settings
+from rest_framework import viewsets, permissions, status
+from rest_framework.filters import SearchFilter
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth import authenticate, get_user_model
+from .models import Ativo, OrdemServico, Manutencao
+from .serializers import AtivoSerializer, OrdemServicoSerializer, FinalizarOSSerializer
+
 class RouteProxyView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
         start_lat = request.data.get('start_lat')
         start_lng = request.data.get('start_lng')
-        end_lat = request.data.get('end_lat')
-        end_lng = request.data.get('end_lng')
+        end_lat = request.data.get('end_lat') # Para rota A->B
+        end_lng = request.data.get('end_lng') # Para rota A->B
+        waypoints_data = request.data.get('waypoints') # Lista de waypoints
 
-        if not all([start_lat, start_lng, end_lat, end_lng]):
-            return Response({'error': 'Coordenadas de origem e destino são obrigatórias.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not start_lat or not start_lng:
+             return Response({'error': 'Coordenadas de origem são obrigatórias.'}, status=status.HTTP_400_BAD_REQUEST)
 
         google_api_url = 'https://maps.googleapis.com/maps/api/directions/json'
         params = {
             'origin': f'{start_lat},{start_lng}',
-            'destination': f'{end_lat},{end_lng}',
             'key': settings.GOOGLE_MAPS_API_KEY,
             'mode': 'driving',
         }
 
-        try:
-            # <<< LOG DE DEPURAÇÃO ADICIONADO AQUI
-            # print("--- A FAZER PEDIDO PARA A API DE DIREÇÕES DA GOOGLE ---")
-            # print(f"URL: {google_api_url}")
-            # print(f"Parâmetros: {params}")
-            # print("----------------------------------------------------")
+        # Decide se é uma rota A->B ou uma rota otimizada
+        if waypoints_data and isinstance(waypoints_data, list) and len(waypoints_data) > 0:
+            # Rota Otimizada com Waypoints
+            # Separa o último waypoint para ser o destino final explícito
+            final_destination_data = waypoints_data[-1]
+            intermediate_waypoints_data = waypoints_data[:-1] # Todos exceto o último
 
+            # Define o destino final
+            params['destination'] = f"{final_destination_data['lat']},{final_destination_data['lng']}"
+
+            # Formata os waypoints intermédios se houver algum
+            if intermediate_waypoints_data:
+                 waypoints_str = "optimize:true|" + "|".join([f"{wp['lat']},{wp['lng']}" for wp in intermediate_waypoints_data])
+                 params['waypoints'] = waypoints_str
+            # Se só houver 1 waypoint, ele torna-se o destino e não há waypoints intermédios
+            
+        elif end_lat and end_lng:
+            # Rota Simples A -> B
+            params['destination'] = f'{end_lat},{end_lng}'
+        else:
+            return Response({'error': 'Coordenadas de destino ou waypoints são obrigatórios.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            print(f"A pedir rota para Google com params: {params}")
             response = requests.get(google_api_url, params=params)
             response.raise_for_status()
-            
-            # <<< LOG DE DEPURAÇÃO DA RESPOSTA
-            # print("--- RESPOSTA RECEBIDA DA GOOGLE ---")
-            # print(response.json())
-            # print("-----------------------------------")
-            
+            print("Resposta da Google recebida.")
             return Response(response.json())
         except requests.exceptions.RequestException as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # Tenta extrair a mensagem de erro da resposta da Google, se disponível
+            error_detail = str(e)
+            try:
+                error_json = response.json()
+                error_detail = error_json.get('error_message', str(e))
+            except: # Ignora erros ao tentar ler o JSON
+                pass
+            print(f"Erro ao contactar Google ({response.status_code}): {error_detail}")
+            return Response({'error': f'Erro ao contactar API Externa: {error_detail}'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception as e:
+            print(f"Erro inesperado no proxy: {e}")
+            return Response({'error': f'Erro interno no servidor: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 """
 ================================= BLOCO 1 — LoginView =================================

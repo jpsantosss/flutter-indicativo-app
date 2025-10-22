@@ -20,8 +20,6 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   late GoogleMapController _mapController;
   final Set<Marker> _markers = {};
-
-  // <<< 1. VARIÁVEIS PARA O CÍRCULO E ROTAS >>>
   final Set<Circle> _circles = {};
   final Map<PolylineId, Polyline> _polylines = {};
   PolylinePoints polylinePoints = PolylinePoints();
@@ -35,14 +33,17 @@ class _MapScreenState extends State<MapScreen> {
     _fetchAtivos();
   }
 
-  // <<< 2. FUNÇÃO ATUALIZADA PARA RETORNAR A POSIÇÃO E DESENHAR O CÍRCULO >>>
+  // Função para obter a localização atual do utilizador
   Future<Position> _getCurrentLocation({bool updateUserMarker = false}) async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       return Future.error('Serviços de localização estão desativados.');
     }
 
-    LocationPermission permission = await Geolocator.checkPermission();
+    permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
@@ -51,7 +52,8 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      return Future.error('A permissão de localização foi negada permanentemente.');
+      return Future.error(
+          'A permissão de localização foi negada permanentemente.');
     }
 
     Position position = await Geolocator.getCurrentPosition(
@@ -106,52 +108,68 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  // Função de desenhar a rota usando o proxy do backend
-  Future<void> _drawRoute(LatLng destination) async {
+  // FUNÇÃO ATUALIZADA PARA ACEITAR LISTA DE WAYPOINTS (OPCIONAL)
+  Future<void> _drawRoute(LatLng destination, {List<LatLng>? waypoints}) async {
+     setState(() { _isLoading = true; }); // Mostra loading ao calcular rota
     try {
       Position startPosition = await _getCurrentLocation();
-      
+      // Usa 'localhost' para web e '10.0.2.2' para o emulador Android
       const String apiUrl = 'http://localhost:8000/api/get-route/';
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'start_lat': startPosition.latitude,
-          'start_lng': startPosition.longitude,
-          'end_lat': destination.latitude,
-          'end_lng': destination.longitude,
-        }),
-      );
+
+      // Monta o corpo do pedido
+      Map<String, dynamic> body = {
+        'start_lat': startPosition.latitude,
+        'start_lng': startPosition.longitude,
+      };
+
+      // Adiciona destino ou waypoints dependendo do caso
+      if (waypoints != null && waypoints.isNotEmpty) {
+        body['waypoints'] = waypoints.map((wp) => {'lat': wp.latitude, 'lng': wp.longitude}).toList();
+        // Para rota otimizada, podemos definir o destino como a origem para um ciclo
+        // body['end_lat'] = startPosition.latitude;
+        // body['end_lng'] = startPosition.longitude;
+      } else {
+        body['end_lat'] = destination.latitude;
+        body['end_lng'] = destination.longitude;
+      }
+
+      final response = await http.post(Uri.parse(apiUrl), headers: {'Content-Type': 'application/json'}, body: json.encode(body));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        
         if ((data['routes'] as List).isNotEmpty) {
+          // A lógica de desenho da polyline é a mesma
           final String encodedPolyline = data['routes'][0]['overview_polyline']['points'];
           List<PointLatLng> points = polylinePoints.decodePolyline(encodedPolyline);
-          
           if (points.isNotEmpty) {
-            List<LatLng> polylineCoordinates = points.map((point) => LatLng(point.latitude, point.longitude)).toList();
-            Polyline polyline = Polyline(
-              polylineId: const PolylineId('route'),
-              color: Colors.blueAccent,
-              points: polylineCoordinates,
-              width: 6,
-            );
-            setState(() {
-              _polylines.clear();
-              _polylines[const PolylineId('route')] = polyline;
-            });
+            List<LatLng> polylineCoordinates = points.map((p) => LatLng(p.latitude, p.longitude)).toList();
+            Polyline polyline = Polyline(polylineId: const PolylineId('route'), color: Colors.blue, points: polylineCoordinates, width: 6);
+            setState(() { _polylines.clear(); _polylines[const PolylineId('route')] = polyline; });
           }
         } else {
            if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nenhuma rota encontrada.')));
         }
       } else {
-        if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro do servidor ao calcular a rota: ${response.body}')));
+         if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro do servidor ao calcular a rota: ${response.body}')));
       }
     } catch (e) {
       if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao traçar a rota: $e')));
+    } finally {
+       if(mounted) setState(() { _isLoading = false; }); // Esconde loading
     }
+  }
+
+  // NOVA FUNÇÃO PARA TRAÇAR A ROTA OTIMIZADA POR TODOS OS MARCADORES
+  Future<void> _drawOptimizedRouteForAllMarkers() async {
+    if (_markers.isEmpty) {
+       if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não há marcadores no mapa para traçar a rota.')));
+       return;
+    }
+    // Recolhe as posições de todos os marcadores
+    List<LatLng> waypoints = _markers.map((marker) => marker.position).toList();
+    // Chama a função _drawRoute passando a lista de waypoints
+    // O 'destination' não é usado neste caso, podemos passar qualquer valor
+    await _drawRoute(waypoints.first, waypoints: waypoints);
   }
 
   Future<void> _fetchAtivos() async {
@@ -171,45 +189,35 @@ class _MapScreenState extends State<MapScreen> {
           ));
         }
         setState(() {
-          _markers.clear();
-          _markers.addAll(tempMarkers);
-          _isLoading = false;
+          _markers.clear(); _markers.addAll(tempMarkers); _isLoading = false;
         });
       } else {
-        setState(() { _errorMessage = 'Falha ao carregar os ativos.'; _isLoading = false; });
+         setState(() { _errorMessage = 'Falha ao carregar os ativos.'; _isLoading = false; });
       }
     } catch (e) {
-      setState(() { _errorMessage = 'Não foi possível conectar ao servidor.'; _isLoading = false; });
+       setState(() { _errorMessage = 'Não foi possível conectar ao servidor.'; _isLoading = false; });
     }
   }
 
   void _showInfoBottomSheet(Ativo ativo) {
      showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
+      context: context, backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
       builder: (context) {
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+          child: Column( mainAxisSize: MainAxisSize.min, children: [
               Text(ativo.nome, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
+              Row( mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                   _buildActionButton(icon: Icons.build, label: 'Solicitar O.S.', onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => SolicitarOSScreen(ativo: ativo)));
+                    Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => SolicitarOSScreen(ativo: ativo)));
                   }),
                   _buildActionButton(icon: Icons.directions, label: 'Rotas', onPressed: () {
-                    Navigator.pop(context);
-                    _drawRoute(LatLng(ativo.latitude, ativo.longitude));
+                    Navigator.pop(context); _drawRoute(LatLng(ativo.latitude, ativo.longitude)); // Rota A->B
                   }),
                   _buildActionButton(icon: Icons.info_outline, label: 'Informações', onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => InfoAtivoScreen(ativo: ativo)));
+                    Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (context) => InfoAtivoScreen(ativo: ativo)));
                   }),
                 ],
               ),
@@ -221,17 +229,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Widget _buildActionButton({required IconData icon, required String label, required VoidCallback onPressed}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+     return Column( mainAxisSize: MainAxisSize.min, children: [
         ElevatedButton(
           onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            shape: const CircleBorder(),
-            padding: const EdgeInsets.all(16),
-            backgroundColor: const Color(0xFF2E95AC),
-            foregroundColor: Colors.white,
-          ),
+          style: ElevatedButton.styleFrom(shape: const CircleBorder(), padding: const EdgeInsets.all(16), backgroundColor: const Color(0xFF2E95AC), foregroundColor: Colors.white),
           child: Icon(icon, size: 30),
         ),
         const SizedBox(height: 8),
@@ -242,40 +243,50 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const Color primaryColor = Color(0xFF12385D);
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF12385D),
+        backgroundColor: primaryColor,
         title: const Text('Mapa', style: TextStyle(color: Colors.white)),
         actions: [ if (!_isLoading) IconButton(icon: const Icon(Icons.refresh), color: Colors.white, onPressed: _fetchAtivos,) ],
       ),
       body: Stack(
         children: [
           GoogleMap(
-            onMapCreated: (controller) {
-              _mapController = controller;
-              _centerOnUser(); // Centraliza e desenha o marcador inicial
-            },
+            onMapCreated: (controller) { _mapController = controller; _centerOnUser(); },
             initialCameraPosition: const CameraPosition(target: LatLng(-22.4123, -42.9664), zoom: 13.5),
             markers: _markers,
             polylines: Set<Polyline>.of(_polylines.values),
-            // <<< 3. ATUALIZAÇÕES NO MAPA >>>
             myLocationEnabled: false, // Desativa o ponto azul padrão
             myLocationButtonEnabled: false,
             circles: _circles, // Usa o nosso círculo customizado
           ),
           if (_isLoading) const Center(child: CircularProgressIndicator()),
-          if (_errorMessage != null) Center(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              color: Colors.white.withOpacity(0.8),
-              child: Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 16)),
-            ),
-          ),
+          if (_errorMessage != null) Center( child: Container( padding: const EdgeInsets.all(16), color: Colors.white.withOpacity(0.8), child: Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 16)),),),
         ],
       ),
+      // BOTÃO INFERIOR PARA A ROTA OTIMIZADA
+      persistentFooterButtons: [
+        if (!_isLoading && _markers.isNotEmpty) // Só mostra o botão se houver marcadores
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.route_outlined),
+              label: const Text('TRAÇAR MELHOR ROTA'),
+              onPressed: _drawOptimizedRouteForAllMarkers,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          )
+      ],
       floatingActionButton: FloatingActionButton(
         onPressed: _centerOnUser,
-        backgroundColor: const Color(0xFF12385D),
+        backgroundColor: primaryColor,
         child: const Icon(Icons.my_location, color: Colors.white),
       ),
     );
