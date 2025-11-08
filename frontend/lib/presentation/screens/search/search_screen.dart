@@ -183,14 +183,14 @@ class _SearchScreenState extends State<SearchScreen> {
               tooltip: 'Editar ativo',
               color: Colors.orange,
             ),
-            IconButton(
-              onPressed: () {
-                /* Ação para ver a rota no futuro */
-              },
-              icon: const Icon(Icons.directions),
-              tooltip: 'Rota para o ativo',
-              color: const Color(0xFF12385D),
-            ),
+            // IconButton(
+            //   onPressed: () {
+            //     /* Ação para ver a rota no futuro */
+            //   },
+            //   icon: const Icon(Icons.directions),
+            //   tooltip: 'Rota para o ativo',
+            //   color: const Color(0xFF12385D),
+            // ),
             IconButton(
               onPressed: () {
                 Navigator.push(

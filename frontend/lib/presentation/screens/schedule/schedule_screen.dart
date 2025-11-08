@@ -193,22 +193,22 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         ],
       ),
       body: Column(children: [_buildHeader(), Expanded(child: _buildBody())]),
-      persistentFooterButtons: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(8.0),
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.route_outlined),
-            label: const Text('TRAÇAR MELHOR ROTA'),
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
-        ),
-      ],
+      // persistentFooterButtons: [
+      //   Container(
+      //     width: double.infinity,
+      //     padding: const EdgeInsets.all(8.0),
+      //     child: ElevatedButton.icon(
+      //       icon: const Icon(Icons.route_outlined),
+      //       label: const Text('TRAÇAR MELHOR ROTA'),
+      //       onPressed: () {},
+      //       style: ElevatedButton.styleFrom(
+      //         backgroundColor: primaryColor,
+      //         foregroundColor: Colors.white,
+      //         padding: const EdgeInsets.symmetric(vertical: 16),
+      //       ),
+      //     ),
+      //   ),
+      // ],
     );
   }
 }

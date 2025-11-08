@@ -67,19 +67,19 @@ class InfoAtivoScreen extends StatelessWidget {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         title: Text(ativo.nome),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Editar Ativo',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => EditarAtivoScreen(ativo: ativo)),
-              );
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.edit_outlined),
+        //     tooltip: 'Editar Ativo',
+        //     onPressed: () {
+        //       Navigator.push(
+        //         context,
+        //         MaterialPageRoute(
+        //             builder: (context) => EditarAtivoScreen(ativo: ativo)),
+        //       );
+        //     },
+        //   ),
+        // ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -150,19 +150,21 @@ class InfoAtivoScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.directions),
-                  label: const Text('IR PARA O ATIVO'),
-                  onPressed: () {
-                    /* Ação para ver a rota */
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
+              // Expanded(
+              //   child: ElevatedButton.icon(
+              //     icon: const Icon(Icons.directions),
+              //     label: const Text('IR PARA O ATIVO'),
+              //     onPressed: () {
+              //       /* Ação para ver a rota */
+              //     },
+              //     style: ElevatedButton.styleFrom(
+              //       backgroundColor: primaryColor,
+              //       foregroundColor: Colors.white,
+              //       padding: const EdgeInsets.symmetric(vertical: 16),
+              //     ),
+              //   ),
+              // ),
+              // const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.build_circle_outlined),

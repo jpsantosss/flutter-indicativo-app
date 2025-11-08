@@ -343,38 +343,38 @@ Resumindo: a função é responsável por **construir a requisição PUT multipa
             const SizedBox(height: 24),
 
             // --- CAMPO MTBF ---
-            const Text(
-              'MTBF (horas)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _mtbfController,
-              decoration: InputDecoration(
-                hintText: 'Ex: 8760',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+            // const Text(
+            //   'MTBF (horas)',
+            //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // ),
+            // const SizedBox(height: 8),
+            // TextField(
+            //   controller: _mtbfController,
+            //   decoration: InputDecoration(
+            //     hintText: 'Ex: 8760',
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(12),
+            //     ),
+            //   ),
+            // ),
+            // const SizedBox(height: 24),
 
-            // --- CAMPO MTTR ---
-            const Text(
-              'MTTR (horas)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _mttrController,
-              decoration: InputDecoration(
-                hintText: 'Ex: 48',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+            // // --- CAMPO MTTR ---
+            // const Text(
+            //   'MTTR (horas)',
+            //   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // ),
+            // const SizedBox(height: 8),
+            // TextField(
+            //   controller: _mttrController,
+            //   decoration: InputDecoration(
+            //     hintText: 'Ex: 48',
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(12),
+            //     ),
+            //   ),
+            // ),
+            // const SizedBox(height: 24),
 
             // --- UPLOAD DE MANUAL ---
             const Text(

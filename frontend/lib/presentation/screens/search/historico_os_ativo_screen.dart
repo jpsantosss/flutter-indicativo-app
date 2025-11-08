@@ -92,7 +92,7 @@ class _HistoricoOsAtivoScreenState extends State<HistoricoOsAtivoScreen> {
                 const Icon(Icons.person_outline, size: 16, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text(
-                    'Executor: ${os.manutencao!.usuarioExecutor ?? "Não informado"}'),
+                    'Executor: Técnico 02'),
               ]),
               const SizedBox(height: 8),
               Row(children: [
@@ -106,7 +106,7 @@ class _HistoricoOsAtivoScreenState extends State<HistoricoOsAtivoScreen> {
                     size: 16, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text(
-                    'Início: ${dateFormatter.format(os.manutencao!.dataInicioExecucao)}'),
+                    'Início: ${dateFormatter.format(os.manutencao!.dataInicioExecucao.toLocal())}'),
               ]),
               const SizedBox(height: 8),
               Row(children: [
@@ -114,7 +114,7 @@ class _HistoricoOsAtivoScreenState extends State<HistoricoOsAtivoScreen> {
                     size: 16, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text(
-                    'Fim: ${dateFormatter.format(os.manutencao!.dataFimExecucao)}'),
+                    'Fim: ${dateFormatter.format(os.manutencao!.dataFimExecucao.toLocal())}'),
               ]),
 
               // Mostra as observações apenas se existirem

@@ -266,24 +266,24 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
       // BOTÃO INFERIOR PARA A ROTA OTIMIZADA
-      persistentFooterButtons: [
-        if (!_isLoading && _markers.isNotEmpty) // Só mostra o botão se houver marcadores
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.route_outlined),
-              label: const Text('TRAÇAR MELHOR ROTA'),
-              onPressed: _drawOptimizedRouteForAllMarkers,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          )
-      ],
+      // persistentFooterButtons: [
+      //   if (!_isLoading && _markers.isNotEmpty) // Só mostra o botão se houver marcadores
+      //     Container(
+      //       width: double.infinity,
+      //       padding: const EdgeInsets.all(8.0),
+      //       child: ElevatedButton.icon(
+      //         icon: const Icon(Icons.route_outlined),
+      //         label: const Text('TRAÇAR MELHOR ROTA'),
+      //         onPressed: _drawOptimizedRouteForAllMarkers,
+      //         style: ElevatedButton.styleFrom(
+      //           backgroundColor: primaryColor,
+      //           foregroundColor: Colors.white,
+      //           padding: const EdgeInsets.symmetric(vertical: 16),
+      //           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      //         ),
+      //       ),
+      //     )
+      // ],
       floatingActionButton: FloatingActionButton(
         onPressed: _centerOnUser,
         backgroundColor: primaryColor,

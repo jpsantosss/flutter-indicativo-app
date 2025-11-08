@@ -163,7 +163,6 @@ class _SolicitarOSScreenState extends State<SolicitarOSScreen> {
               TextField(
                 controller: _tituloController,
                 decoration: InputDecoration(
-                  hintText: '...',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

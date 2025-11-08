@@ -125,7 +125,7 @@ class _IniciarOrdemServicoScreenState extends State<IniciarOrdemServicoScreen> {
             Row(children: [
               const Icon(Icons.person, color: Colors.grey),
               const SizedBox(width: 8),
-              Text('Executor: Utilizador Atual', style: const TextStyle(fontSize: 16)), // Simplificado
+              Text('Executor: Técnico 01', style: const TextStyle(fontSize: 16)), // Simplificado
             ]),
             const SizedBox(height: 12),
             Row(children: [

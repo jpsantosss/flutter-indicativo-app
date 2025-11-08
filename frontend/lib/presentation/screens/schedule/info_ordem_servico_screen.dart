@@ -115,7 +115,7 @@ class _InfoOrdemServicoScreenState extends State<InfoOrdemServicoScreen> {
           _buildInfoRow('Data Prevista', dateFormatter.format(os.dataPrevista)),
           _buildInfoRow(
             'Solicitante',
-            os.usuarioSolicitante ?? 'Não informado',
+            'Técnico 02',
           ),
           _buildInfoRow(
             'Data da Solicitação',
