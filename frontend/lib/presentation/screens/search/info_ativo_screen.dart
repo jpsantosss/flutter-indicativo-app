@@ -148,8 +148,6 @@ class InfoAtivoScreen extends StatelessWidget {
           padding: const EdgeInsets.all(8.0),
           child: Row(
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
               // Expanded(
               //   child: ElevatedButton.icon(
               //     icon: const Icon(Icons.directions),
