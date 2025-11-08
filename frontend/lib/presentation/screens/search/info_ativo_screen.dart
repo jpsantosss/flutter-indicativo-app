@@ -23,17 +23,23 @@ class InfoAtivoScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16)),
+              Text(
+                title,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
               const SizedBox(height: 8),
-              Text(value,
-                  style: const TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22)),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                ),
+              ),
             ],
           ),
         ),
@@ -50,8 +56,10 @@ class InfoAtivoScreen extends StatelessWidget {
         children: [
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
           const SizedBox(height: 4),
-          Text(value,
-              style: const TextStyle(color: Colors.black87, fontSize: 18)),
+          Text(
+            value,
+            style: const TextStyle(color: Colors.black87, fontSize: 18),
+          ),
           const Divider(height: 24),
         ],
       ),
@@ -62,24 +70,22 @@ class InfoAtivoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF12385D);
 
+    // Lógica de fallback: se MTBF/MTTR == 0 → mostrar periodicidade
+    final mtbfValue =
+        (ativo.mtbf != 0)
+            ? ativo.mtbf.toString()
+            : '${ativo.periodicidade} dias';
+
+    final mttrValue =
+        (ativo.mttr != 0)
+            ? ativo.mttr.toString()
+            : '0 horas';
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         title: Text(ativo.nome),
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.edit_outlined),
-        //     tooltip: 'Editar Ativo',
-        //     onPressed: () {
-        //       Navigator.push(
-        //         context,
-        //         MaterialPageRoute(
-        //             builder: (context) => EditarAtivoScreen(ativo: ativo)),
-        //       );
-        //     },
-        //   ),
-        // ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -89,14 +95,13 @@ class InfoAtivoScreen extends StatelessWidget {
             // -- INDICADORES MTBF e MTTR --
             Row(
               children: [
-                _buildIndicatorCard(
-                    'MTBF', ativo.mtbf ?? 'N/A', Colors.green.shade700),
+                _buildIndicatorCard('MTBF', mtbfValue, Colors.green.shade700),
                 const SizedBox(width: 16),
-                _buildIndicatorCard(
-                    'MTTR', ativo.mttr ?? 'N/A', Colors.orange.shade800),
+                _buildIndicatorCard('MTTR', mttrValue, Colors.orange.shade800),
               ],
             ),
             const SizedBox(height: 24),
+
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -106,10 +111,11 @@ class InfoAtivoScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => HistoricoOsAtivoScreen(
-                        ativoId: ativo.id,
-                        ativoNome: ativo.nome,
-                      ),
+                      builder:
+                          (context) => HistoricoOsAtivoScreen(
+                            ativoId: ativo.id,
+                            ativoNome: ativo.nome,
+                          ),
                     ),
                   );
                 },
@@ -132,14 +138,16 @@ class InfoAtivoScreen extends StatelessWidget {
             _buildInfoRow('Marca', ativo.marca),
             _buildInfoRow('Modelo', ativo.modelo),
             _buildInfoRow(
-                'Periodicidade da Manutenção', '${ativo.periodicidade} dias'),
+              'Periodicidade da Manutenção',
+              '${ativo.periodicidade} dias',
+            ),
             _buildInfoRow('Endereço', ativo.endereco),
             _buildInfoRow('Latitude', ativo.latitude.toString()),
             _buildInfoRow('Longitude', ativo.longitude.toString()),
             _buildInfoRow(
-                'Manual', ativo.manualUrl ?? 'Nenhum manual cadastrado'),
-
-            // -- BOTÃO DE HISTÓRICO --
+              'Manual',
+              ativo.manualUrl ?? 'Nenhum manual cadastrado',
+            ),
           ],
         ),
       ),
@@ -148,21 +156,6 @@ class InfoAtivoScreen extends StatelessWidget {
           padding: const EdgeInsets.all(8.0),
           child: Row(
             children: [
-              // Expanded(
-              //   child: ElevatedButton.icon(
-              //     icon: const Icon(Icons.directions),
-              //     label: const Text('IR PARA O ATIVO'),
-              //     onPressed: () {
-              //       /* Ação para ver a rota */
-              //     },
-              //     style: ElevatedButton.styleFrom(
-              //       backgroundColor: primaryColor,
-              //       foregroundColor: Colors.white,
-              //       padding: const EdgeInsets.symmetric(vertical: 16),
-              //     ),
-              //   ),
-              // ),
-              // const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.build_circle_outlined),
@@ -171,8 +164,7 @@ class InfoAtivoScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            SolicitarOSScreen(ativo: ativo),
+                        builder: (context) => SolicitarOSScreen(ativo: ativo),
                       ),
                     );
                   },
@@ -190,4 +182,3 @@ class InfoAtivoScreen extends StatelessWidget {
     );
   }
 }
-

@@ -60,12 +60,12 @@ class _EditarAtivoScreenState extends State<EditarAtivoScreen> {
     _longitudeController = TextEditingController(
       text: widget.ativo.longitude.toString(),
     );
-    _mtbfController = TextEditingController(text: widget.ativo.mtbf ?? '');
-    _mttrController = TextEditingController(text: widget.ativo.mttr ?? '');
-    if (widget.ativo.manualUrl != null && widget.ativo.manualUrl!.isNotEmpty) {
-      _nomeArquivoManualExistente =
-          Uri.parse(widget.ativo.manualUrl!).pathSegments.last;
-    }
+    // _mtbfController = TextEditingController(text: widget.ativo.mtbf ?? '');
+    // _mttrController = TextEditingController(text: widget.ativo.mttr ?? '');
+    // if (widget.ativo.manualUrl != null && widget.ativo.manualUrl!.isNotEmpty) {
+    //   _nomeArquivoManualExistente =
+    //       Uri.parse(widget.ativo.manualUrl!).pathSegments.last;
+    // }
   }
 
   @override
