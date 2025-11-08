@@ -4,6 +4,7 @@
 # arquivos e nunca deve ser enviada para o repositório.
 # =========================================
 /backend/venv/
+/backend/media/
 
 # =========================================
 # Arquivos compilados e cache do Python/Django

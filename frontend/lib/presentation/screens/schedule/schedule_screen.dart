@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_tcc/data/models/ordem_servico.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:flutter_tcc/presentation/screens/schedule/info_ordem_servico_screen.dart';
 
@@ -12,31 +14,82 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime _selectedDate = DateTime.now();
 
-  // Dados fictícios das Ordens de Serviço do dia
-  final List<OrdemServico> _ordensDoDia = [
-    OrdemServico(
-      titulo: "Manutenção Corretiva",
-      ativo: "ATIVO 002 - CÂMARA DE SEGURANÇA",
-      inicio: DateTime.now().copyWith(hour: 9, minute: 0),
-      fim: DateTime.now().copyWith(hour: 10, minute: 30),
-      usuarioSolicitante: "João Pedro",
-      dataCriacao: DateTime.now().subtract(const Duration(days: 2)),
-      tipoManutencao: "Corretiva",
-      status: StatusOS.pendente,
-    ),
-    OrdemServico(
-      titulo: "Manutenção Preventiva",
-      ativo: "ATIVO 001 - POSTE SOLAR",
-      inicio: DateTime.now().copyWith(hour: 14, minute: 0),
-      fim: DateTime.now().copyWith(hour: 15, minute: 0),
-      usuarioSolicitante: "Admin (Automático)",
-      dataCriacao: DateTime.now().subtract(const Duration(days: 5)),
-      tipoManutencao: "Preventiva",
-      status: StatusOS.pendente,
-    ),
-  ];
+  // Variáveis de estado
+  bool _isLoading = true;
+  List<OrdemServico> _todasAsOrdensPendentes = []; // Armazena todas as O.S. pendentes
+  List<OrdemServico> _ordensFiltradas = []; // Armazena as O.S. para a data selecionada
+  String? _errorMessage;
 
-  // Cabeçalho para navegar entre os dias
+  @override
+  void initState() {
+    super.initState();
+    _fetchOrdensServico();
+  }
+
+  // Função para buscar as O.S. da API
+  Future<void> _fetchOrdensServico() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // <<< ALTERAÇÃO: Busca todas as O.S. com status 'pendente' de uma só vez
+    const String apiUrl = 'http://localhost:8000/api/ordens-servico/?status=pendente';
+
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+        final List<OrdemServico> ordens =
+            data.map((json) => OrdemServico.fromJson(json)).toList();
+        
+        setState(() {
+          _todasAsOrdensPendentes = ordens;
+          // Após buscar, aplica o filtro inicial para a data atual
+          _filtrarOrdensPorData();
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Falha ao carregar as Ordens de Serviço.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Não foi possível conectar ao servidor.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // <<< NOVA FUNÇÃO: Filtra a lista localmente sem precisar de chamar a API novamente
+  void _filtrarOrdensPorData() {
+    // Normaliza a data selecionada para ignorar as horas
+    final dataSelecionadaSemHoras = DateUtils.dateOnly(_selectedDate);
+
+    setState(() {
+      _ordensFiltradas = _todasAsOrdensPendentes.where((os) {
+        // Normaliza a data prevista da O.S.
+        final dataPrevistaSemHoras = DateUtils.dateOnly(os.dataPrevista);
+        // Mantém a O.S. se a sua data prevista for no mesmo dia ou depois da data selecionada
+        return !dataPrevistaSemHoras.isBefore(dataSelecionadaSemHoras);
+      }).toList();
+    });
+  }
+
+
+  void _changeDate(int days) {
+    setState(() {
+      _selectedDate = _selectedDate.add(Duration(days: days));
+      // <<< ALTERAÇÃO: Apenas aplica o filtro local, não chama a API
+      _filtrarOrdensPorData();
+    });
+  }
+
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -45,64 +98,85 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         children: [
           IconButton(
             icon: const Icon(Icons.chevron_left, size: 30),
-            onPressed: () {
-              setState(() {
-                _selectedDate = _selectedDate.subtract(const Duration(days: 1));
-              });
-            },
+            onPressed: () => _changeDate(-1),
           ),
           Text(
-            DateFormat.yMMMMEEEEd('pt_BR').format(_selectedDate),
+            DateFormat('EEEE, dd/MM/yyyy', 'pt_BR').format(_selectedDate),
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           IconButton(
             icon: const Icon(Icons.chevron_right, size: 30),
-            onPressed: () {
-              setState(() {
-                _selectedDate = _selectedDate.add(const Duration(days: 1));
-              });
-            },
+            onPressed: () => _changeDate(1),
           ),
         ],
       ),
     );
   }
 
-  // Widget que cria um card individual para cada Ordem de Serviço
+  // O Widget do card permanece o mesmo
   Widget _buildOSCard(OrdemServico os) {
-    // Define um ícone e cor com base na prioridade da O.S.
+    final bool isFinalizada = os.status == StatusOS.finalizada;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isFinalizada ? Colors.grey.shade200 : null,
       child: ListTile(
-        contentPadding: const EdgeInsets.all(16.0),
         title: Text(
           os.titulo,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            decoration: isFinalizada ? TextDecoration.lineThrough : null,
+            color: isFinalizada ? Colors.grey.shade600 : null,
+          ),
         ),
-        subtitle: Text(
-          '${os.ativo}\n${DateFormat('HH:mm').format(os.inicio)} - ${DateFormat('HH:mm').format(os.fim)}',
-        ),
-        trailing: const Icon(Icons.chevron_right),
+        subtitle: Text('Ativo: ${os.ativo}\nData Prevista: ${DateFormat('dd/MM/yyyy').format(os.dataPrevista)}'),
         isThreeLine: true,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => InfoOrdemServicoScreen(ordemServico: os),
-            ),
-          );
-        },
+        trailing: Icon(
+          isFinalizada ? Icons.check_circle : Icons.chevron_right,
+          color: isFinalizada ? Colors.green : null,
+        ),
+        onTap: isFinalizada
+            ? null
+            : () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        InfoOrdemServicoScreen(ordemServicoId: os.id),
+                  ),
+                ).then((_) => _fetchOrdensServico());
+              },
       ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_errorMessage != null) {
+      return Center(
+        child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+      );
+    }
+    // <<< ALTERAÇÃO: Verifica a lista filtrada
+    if (_ordensFiltradas.isEmpty) {
+      return const Center(
+        child: Text('Nenhuma O.S. pendente para esta data ou datas futuras.'),
+      );
+    }
+    return ListView.builder(
+      // <<< ALTERAÇÃO: Usa a lista filtrada
+      itemCount: _ordensFiltradas.length,
+      itemBuilder: (context, index) {
+        return _buildOSCard(_ordensFiltradas[index]);
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF12385D);
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: primaryColor,
@@ -110,43 +184,32 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           'Agenda de Serviços',
           style: TextStyle(color: Colors.white),
         ),
-      ),
-      body: Column(
-        children: [
-          _buildHeader(),
-          // A lista de O.S. ocupa todo o espaço restante
-          Expanded(
-            child: ListView.builder(
-              itemCount: _ordensDoDia.length,
-              itemBuilder: (context, index) {
-                return _buildOSCard(_ordensDoDia[index]);
-              },
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            color: Colors.white,
+            onPressed: () => _fetchOrdensServico(),
           ),
         ],
       ),
-      // Botão fixo no rodapé da tela
-      persistentFooterButtons: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(8.0),
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.route_outlined),
-            label: const Text('TRAÇAR MELHOR ROTA'),
-            onPressed: () {
-              // Lógica futura para otimização de rota
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-      ],
+      body: Column(children: [_buildHeader(), Expanded(child: _buildBody())]),
+      // persistentFooterButtons: [
+      //   Container(
+      //     width: double.infinity,
+      //     padding: const EdgeInsets.all(8.0),
+      //     child: ElevatedButton.icon(
+      //       icon: const Icon(Icons.route_outlined),
+      //       label: const Text('TRAÇAR MELHOR ROTA'),
+      //       onPressed: () {},
+      //       style: ElevatedButton.styleFrom(
+      //         backgroundColor: primaryColor,
+      //         foregroundColor: Colors.white,
+      //         padding: const EdgeInsets.symmetric(vertical: 16),
+      //       ),
+      //     ),
+      //   ),
+      // ],
     );
   }
 }
+
