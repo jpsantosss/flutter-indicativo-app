@@ -78,7 +78,7 @@ class InfoAtivoScreen extends StatelessWidget {
 
     final mttrValue =
         (ativo.mttr != 0)
-            ? ativo.mttr.toString()
+            ? '${(ativo.mttr / 60).toStringAsFixed(1)} horas'
             : '0 horas';
 
     return Scaffold(
