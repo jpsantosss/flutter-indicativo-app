@@ -34,8 +34,8 @@ class _EditarAtivoScreenState extends State<EditarAtivoScreen> {
   late TextEditingController _enderecoController;
   late TextEditingController _latitudeController;
   late TextEditingController _longitudeController;
-  late TextEditingController _mtbfController;
-  late TextEditingController _mttrController;
+  // late TextEditingController _mtbfController;
+  // late TextEditingController _mttrController;
 
   PlatformFile? _manualFile;
   String? _nomeArquivoManualExistente;
@@ -60,12 +60,12 @@ class _EditarAtivoScreenState extends State<EditarAtivoScreen> {
     _longitudeController = TextEditingController(
       text: widget.ativo.longitude.toString(),
     );
-    _mtbfController = TextEditingController(text: widget.ativo.mtbf ?? '');
-    _mttrController = TextEditingController(text: widget.ativo.mttr ?? '');
-    if (widget.ativo.manualUrl != null && widget.ativo.manualUrl!.isNotEmpty) {
-      _nomeArquivoManualExistente =
-          Uri.parse(widget.ativo.manualUrl!).pathSegments.last;
-    }
+    // _mtbfController = TextEditingController(text: widget.ativo.mtbf ?? '');
+    // _mttrController = TextEditingController(text: widget.ativo.mttr ?? '');
+    // if (widget.ativo.manualUrl != null && widget.ativo.manualUrl!.isNotEmpty) {
+    //   _nomeArquivoManualExistente =
+    //       Uri.parse(widget.ativo.manualUrl!).pathSegments.last;
+    // }
   }
 
   @override
@@ -78,8 +78,8 @@ class _EditarAtivoScreenState extends State<EditarAtivoScreen> {
     _enderecoController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
-    _mtbfController.dispose();
-    _mttrController.dispose();
+    // _mtbfController.dispose();
+    // _mttrController.dispose();
     super.dispose();
   }
 
@@ -146,8 +146,8 @@ Resumindo: a função é responsável por **construir a requisição PUT multipa
       request.fields['modelo'] = _modeloController.text;
       request.fields['periodicidade'] = _periodicidadeController.text;
       request.fields['endereco'] = _enderecoController.text;
-      request.fields['mtbf'] = _mtbfController.text;
-      request.fields['mttr'] = _mttrController.text;
+      // request.fields['mtbf'] = _mtbfController.text;
+      // request.fields['mttr'] = _mttrController.text;
       request.fields['localizacao'] = json.encode({
         'type': 'Point',
         'coordinates': [longitude, latitude],

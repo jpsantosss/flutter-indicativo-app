@@ -12,8 +12,8 @@ class Ativo {
   // Campos que podem ser nulos agora têm '?'
   final String? manualUrl;
   final String? nomeArquivoManual;
-  final String? mtbf;
-  final String? mttr;
+  final int mtbf;
+  final int mttr;
 
   Ativo({
     required this.id,
@@ -26,8 +26,8 @@ class Ativo {
     required this.longitude,
     this.manualUrl,
     this.nomeArquivoManual,
-    this.mtbf,
-    this.mttr,
+    required this.mtbf,
+    required this.mttr,
   });
 
   factory Ativo.fromJson(Map<String, dynamic> json) {
