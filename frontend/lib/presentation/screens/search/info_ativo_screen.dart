@@ -73,7 +73,7 @@ class InfoAtivoScreen extends StatelessWidget {
     // Lógica de fallback: se MTBF/MTTR == 0 → mostrar periodicidade
     final mtbfValue =
         (ativo.mtbf != 0)
-            ? ativo.mtbf.toString()
+            ? '${(ativo.mtbf / 60).toStringAsFixed(1)} horas'
             : '${ativo.periodicidade} dias';
 
     final mttrValue =
