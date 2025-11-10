@@ -145,7 +145,7 @@ class Command(BaseCommand):
         ended = timezone.now()
         duration = ended - started
         self.stdout.write(self.style.SUCCESS(
-            f'Concluído. Processados: {total_processados}. Atualizados: {total_atualizados}. Sem alteração: {total_sem_alteracao}. Erros: {erros}. Duração: {duration}.'
+            f'-------------- Concluído. -------------- \nProcessados: {total_processados}.\nAtualizados: {total_atualizados}. \nSem alteração: {total_sem_alteracao}. \nErros: {erros}.'
         ))
 
 
